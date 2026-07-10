@@ -1,0 +1,55 @@
+body {
+  background-color: #f4f6f9;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+  transition: 0.3s;
+  border-radius: 12px;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Form Cards */
+.card {
+  border-radius: 12px;
+}
+
+.card-header {
+  font-weight: bold;
+}
+
+/* Inputs */
+.form-control {
+  border-radius: 8px;
+}
+
+/* Buttons */
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* Navbar */
+
+.navbar-brand {
+  font-size: 1.5rem;
+}
+
+.nav-link {
+  color: white !important;
+  margin-left: 15px;
+  transition: 0.3s;
+}
+
+.nav-link:hover {
+  color: #ffe082 !important;
+}
+
+.nav-link.active {
+  font-weight: bold;
+  border-bottom: 2px solid white;
+}
