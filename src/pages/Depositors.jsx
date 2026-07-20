@@ -140,7 +140,7 @@ const groupedDonors = {};
 
 donations.forEach((donation) => {
 
-    const phone = donation.phone;
+    const phone = donation.phone.trim();
 
     if (!groupedDonors[phone]) {
 
