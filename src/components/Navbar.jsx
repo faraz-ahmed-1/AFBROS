@@ -1,8 +1,24 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function Navbar() {
 
     const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+
+        const confirmLogout = window.confirm(
+            "Are you sure you want to logout?"
+        );
+
+        if (!confirmLogout) return;
+
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+
+        navigate("/login");
+
+    };
 
     return (
 
@@ -16,6 +32,7 @@ function Navbar() {
 
                 <button
                     className="navbar-toggler"
+                    type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbar"
                 >
@@ -64,6 +81,13 @@ function Navbar() {
                         </li>
 
                     </ul>
+
+                    <button
+                        className="btn btn-outline-light ms-3"
+                        onClick={handleLogout}
+                    >
+                        Logout
+                    </button>
 
                 </div>
 

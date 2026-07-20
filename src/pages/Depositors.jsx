@@ -127,14 +127,38 @@ const filteredDonations = donations.filter(d=>{
 const indexOfLastRecord = currentPage * recordsPerPage;
 const indexOfFirstRecord = indexOfLastRecord - recordsPerPage;
 
-const currentFilteredDonations = donations.slice(
+const currentFilteredDonations = filteredDonations.slice(
     indexOfFirstRecord,
     indexOfLastRecord
 );
 
 const totalPages = Math.ceil(
-    donations.length / recordsPerPage
+    filteredDonations.length / recordsPerPage
 );
+
+const groupedDonors = {};
+
+donations.forEach((donation) => {
+
+    const phone = donation.phone;
+
+    if (!groupedDonors[phone]) {
+
+        groupedDonors[phone] = {
+            full_name: donation.full_name,
+            phone: donation.phone,
+            totalDonation: 0
+        };
+
+    }
+
+    groupedDonors[phone].totalDonation += Number(donation.amount);
+
+});
+
+const topDonors = Object.values(groupedDonors)
+    .sort((a, b) => b.totalDonation - a.totalDonation)
+    .slice(0, 5);
   return (
     <div className="container mt-5">
 <div className="row mb-4">
@@ -247,40 +271,28 @@ const totalPages = Math.ceil(
 
     <div className="card-body">
 
-        <ol className="mb-0">
+<ol className="mb-0">
 
-            {
+    {topDonors.map((donor, index) => (
 
-                [...donations]
+        <li
+            key={donor.phone}
+            className="d-flex justify-content-between align-items-center mb-2"
+        >
 
-                .sort((a,b)=>b.amount-a.amount)
+            <strong>
+                #{index + 1} {donor.full_name}
+            </strong>
 
-                .slice(0,5)
+            <span className="text-success fw-bold">
+                Rs. {donor.totalDonation.toLocaleString()}
+            </span>
 
-                .map((donor)=>(
+        </li>
 
-                    <li
-                        key={donor.id}
-                        className="mb-2"
-                    >
+    ))}
 
-                        <strong>
-
-                            {donor.full_name}
-
-                        </strong>
-
-                        {" - "}
-
-                        Rs. {Number(donor.amount).toLocaleString()}
-
-                    </li>
-
-                ))
-
-            }
-
-        </ol>
+</ol>
 
     </div>
 
@@ -397,7 +409,7 @@ onChange={(e) => {
         <tbody>
 
             {
-                donations.length === 0 ?
+                 filteredDonations.length === 0 ?
 
                 (
                     <tr>
@@ -486,15 +498,15 @@ onChange={(e) => {
 
 <div className="text-center mt-3 text-muted">
 
-    Showing
+Showing
 
-    <strong> {currentFilteredDonations.length} </strong>
+<strong> {currentFilteredDonations.length} </strong>
 
-    of
+of
 
-    <strong> {donations.length} </strong>
+<strong> {filteredDonations.length} </strong>
 
-    donors
+donors
 
 </div>
 </div>
