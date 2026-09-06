@@ -1,123 +1,245 @@
 import { useState } from "react";
+import { FaReceipt } from "react-icons/fa";
+
 import api from "../api/api";
+import { useToast } from "../context/ToastContext";
 
-function ExpenseForm({ refreshDashboard }) {
+function ExpenseForm({
+    refreshDashboard
+}) {
 
-    const [expense, setExpense] = useState({
+    const toast = useToast();
+
+    const [form, setForm] = useState({
         fullName: "",
         amount: "",
         description: "",
         date: ""
     });
 
+    const [loading, setLoading] =
+        useState(false);
+
     const handleChange = (e) => {
-        setExpense({
-            ...expense,
-            [e.target.name]: e.target.value
-        });
+
+        const {
+            name,
+            value
+        } = e.target;
+
+        setForm((current) => ({
+            ...current,
+            [name]: value
+        }));
     };
 
     const handleSubmit = async (e) => {
+
         e.preventDefault();
+
+        const fullName =
+            form.fullName.trim();
+
+        const description =
+            form.description.trim();
+
+        const amount =
+            Number(form.amount);
+
+        if (
+            !fullName ||
+            !description ||
+            !form.date
+        ) {
+            toast.warning(
+                "Please fill in all expense fields."
+            );
+
+            return;
+        }
+
+        if (
+            !Number.isFinite(amount) ||
+            amount <= 0
+        ) {
+            toast.warning(
+                "Expense amount must be greater than zero."
+            );
+
+            return;
+        }
 
         try {
 
-            const response = await api.post("/expenses", expense);
+            setLoading(true);
 
-            await refreshDashboard();
+            const res = await api.post(
+                "/expenses",
+                {
+                    fullName,
+                    amount,
+                    description,
+                    date: form.date
+                }
+            );
 
-            alert(response.data.message);
-
-            setExpense({
+            setForm({
                 fullName: "",
                 amount: "",
                 description: "",
                 date: ""
             });
 
+            if (refreshDashboard) {
+                await refreshDashboard();
+            }
+
+            toast.success(
+                res.data?.message ||
+                "Expense added successfully."
+            );
+
         } catch (err) {
 
-            console.error(err);
-            alert("Failed to save expense.");
+            console.error(
+                "Add expense error:",
+                err
+            );
+
+            toast.error(
+                err.response?.data?.message ||
+                "Unable to add expense."
+            );
+
+        } finally {
+
+            setLoading(false);
 
         }
     };
 
     return (
-        <div className="card shadow border-0 h-100">
+        <div className="afbros-form-card">
 
-            <div className="card-header bg-danger text-white">
-                <h4 className="mb-0">Add Expense</h4>
-            </div>
+            <div className="afbros-form-heading">
 
-            <div className="card-body">
+                <div
+                    className="afbros-form-heading-icon"
+                    style={{
+                        background: "#fff0f1",
+                        color: "#dc3545"
+                    }}
+                >
+                    <FaReceipt />
+                </div>
 
-                <form onSubmit={handleSubmit}>
+                <div>
 
-                    <div className="mb-3">
-                        <label className="form-label">Full Name</label>
+                    <h3 className="afbros-form-title">
+                        Add Expense
+                    </h3>
 
-                        <input
-                            type="text"
-                            name="fullName"
-                            className="form-control"
-                            placeholder="Enter full name"
-                            value={expense.fullName}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
+                    <p className="afbros-form-subtitle">
+                        Record a new expense
+                    </p>
 
-                    <div className="mb-3">
-                        <label className="form-label">Amount</label>
-
-                        <input
-                            type="number"
-                            name="amount"
-                            className="form-control"
-                            placeholder="Enter amount"
-                            value={expense.amount}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    <div className="mb-3">
-                        <label className="form-label">Description</label>
-
-                        <textarea
-                            name="description"
-                            className="form-control"
-                            rows="3"
-                            placeholder="Enter description"
-                            value={expense.description}
-                            onChange={handleChange}
-                        ></textarea>
-                    </div>
-
-                    <div className="mb-4">
-                        <label className="form-label">Date</label>
-
-                        <input
-                            type="date"
-                            name="date"
-                            className="form-control"
-                            value={expense.date}
-                            onChange={handleChange}
-                            required
-                        />
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="btn btn-danger w-100"
-                    >
-                        Save Expense
-                    </button>
-
-                </form>
+                </div>
 
             </div>
+
+            <form onSubmit={handleSubmit}>
+
+                <div className="mb-3">
+
+                    <label className="form-label afbros-form-label">
+                        Full Name
+                    </label>
+
+                    <input
+                        type="text"
+                        name="fullName"
+                        className="form-control afbros-form-control"
+                        value={form.fullName}
+                        onChange={handleChange}
+                        placeholder="Enter name"
+                    />
+
+                </div>
+
+                <div className="mb-3">
+
+                    <label className="form-label afbros-form-label">
+                        Amount
+                    </label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        min="1"
+                        className="form-control afbros-form-control"
+                        value={form.amount}
+                        onChange={handleChange}
+                        placeholder="Enter expense amount"
+                    />
+
+                </div>
+
+                <div className="mb-3">
+
+                    <label className="form-label afbros-form-label">
+                        Description
+                    </label>
+
+                    <textarea
+                        name="description"
+                        rows="2"
+                        className="form-control afbros-form-control"
+                        value={form.description}
+                        onChange={handleChange}
+                        placeholder="Enter expense description"
+                    />
+
+                </div>
+
+                <div className="mb-4">
+
+                    <label className="form-label afbros-form-label">
+                        Expense Date
+                    </label>
+
+                    <input
+                        type="date"
+                        name="date"
+                        className="form-control afbros-form-control"
+                        value={form.date}
+                        onChange={handleChange}
+                    />
+
+                </div>
+
+                <button
+                    type="submit"
+                    className="btn btn-danger w-100"
+                    style={{
+                        minHeight: "48px",
+                        borderRadius: "10px",
+                        fontWeight: 600
+                    }}
+                    disabled={loading}
+                >
+
+                    {loading ? (
+                        <>
+                            <span className="spinner-border spinner-border-sm me-2" />
+                            Adding Expense...
+                        </>
+                    ) : (
+                        "Add Expense"
+                    )}
+
+                </button>
+
+            </form>
 
         </div>
     );
