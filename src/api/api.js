@@ -1,10 +1,21 @@
 import axios from "axios";
 
+const API_URL =
+    import.meta.env.VITE_API_URL
+        ? `${import.meta.env.VITE_API_URL.replace(/\/$/, "")}/api`
+        : "http://localhost:5000/api";
+
+
+console.log("AFBROS API URL:", API_URL);
+
+
 const api = axios.create({
 
-    baseURL:
-        import.meta.env.VITE_API_URL/api ||
-        "http://localhost:5000/api"
+    baseURL: API_URL,
+
+    headers: {
+        "Content-Type": "application/json"
+    }
 
 });
 
@@ -16,12 +27,14 @@ api.interceptors.request.use(
             localStorage.getItem("token") ||
             sessionStorage.getItem("token");
 
+
         if (token) {
 
             config.headers.Authorization =
                 `Bearer ${token}`;
 
         }
+
 
         return config;
 
