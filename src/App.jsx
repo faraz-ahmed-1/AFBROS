@@ -27,6 +27,9 @@ import Depositors
 import Expenses
     from "./pages/Expenses";
 
+import Requests
+    from "./pages/Requests";
+
 import {
     hasSiteAccess
 } from "./utils/auth";
@@ -57,15 +60,11 @@ function App() {
 
             <Routes>
 
-                {/* LOGIN */}
-
                 <Route
                     path="/login"
                     element={<Login />}
                 />
 
-
-                {/* MANAGER / GUEST ACCESS */}
 
                 <Route
                     element={<AccessRoute />}
@@ -80,24 +79,25 @@ function App() {
                             element={<Home />}
                         />
 
-
                         <Route
                             path="/depositors"
                             element={<Depositors />}
                         />
-
 
                         <Route
                             path="/expenses"
                             element={<Expenses />}
                         />
 
+                        <Route
+                            path="/requests"
+                            element={<Requests />}
+                        />
+
                     </Route>
 
                 </Route>
 
-
-                {/* FALLBACK */}
 
                 <Route
                     path="*"
@@ -120,5 +120,6 @@ function App() {
     );
 
 }
+
 
 export default App;

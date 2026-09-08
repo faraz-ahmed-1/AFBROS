@@ -10,7 +10,8 @@ import {
     FaFilePdf,
     FaTimes,
     FaCalendarAlt,
-    FaDownload
+    FaDownload,
+    FaUser
 } from "react-icons/fa";
 
 import api
@@ -33,6 +34,10 @@ function PdfReportButton() {
         useToast();
 
 
+    // ==================================================
+    // MODAL
+    // ==================================================
+
     const [
         showModal,
         setShowModal
@@ -44,6 +49,20 @@ function PdfReportButton() {
         setDownloading
     ] = useState(false);
 
+
+    // ==================================================
+    // DONOR FILTER
+    // ==================================================
+
+    const [
+        donorName,
+        setDonorName
+    ] = useState("");
+
+
+    // ==================================================
+    // DATE FIELDS
+    // ==================================================
 
     const [
         dates,
@@ -62,7 +81,7 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // REPORT TYPE BASED ON CURRENT PAGE
+    // REPORT TYPE
     // ==================================================
 
     let reportType =
@@ -101,6 +120,9 @@ function PdfReportButton() {
     }
 
 
+    // No PDF button on requests
+    // or any other page.
+
     if (!reportType) {
 
         return null;
@@ -109,7 +131,7 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // INPUT CHANGE
+    // DATE INPUT CHANGE
     // ==================================================
 
     const handleChange = (
@@ -144,10 +166,15 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // CLEAR DATES
+    // CLEAR FILTERS
     // ==================================================
 
-    const clearDates = () => {
+    const clearFilters = () => {
+
+        setDonorName(
+            ""
+        );
+
 
         setDates({
 
@@ -165,6 +192,26 @@ function PdfReportButton() {
 
 
     // ==================================================
+    // CLOSE MODAL
+    // ==================================================
+
+    const closeModal = () => {
+
+        if (downloading) {
+
+            return;
+
+        }
+
+
+        setShowModal(
+            false
+        );
+
+    };
+
+
+    // ==================================================
     // BUILD VALID DATE
     // ==================================================
 
@@ -177,8 +224,10 @@ function PdfReportButton() {
         const year =
             Number(yearValue);
 
+
         const month =
             Number(monthValue);
+
 
         const day =
             Number(dayValue);
@@ -211,16 +260,24 @@ function PdfReportButton() {
 
 
         return (
-            `${String(year).padStart(
+
+            `${String(
+                year
+            ).padStart(
                 4,
                 "0"
-            )}-${String(month).padStart(
+            )}-${String(
+                month
+            ).padStart(
                 2,
                 "0"
-            )}-${String(day).padStart(
+            )}-${String(
+                day
+            ).padStart(
                 2,
                 "0"
             )}`
+
         );
 
     };
@@ -255,6 +312,7 @@ function PdfReportButton() {
             let from =
                 null;
 
+
             let to =
                 null;
 
@@ -269,7 +327,7 @@ function PdfReportButton() {
             ) {
 
                 toast.error(
-                    "Complete all Day, Month and Year fields, or leave all fields empty for the complete statement."
+                    "Complete all Day, Month and Year fields, or leave all date fields empty."
                 );
 
                 return;
@@ -278,7 +336,7 @@ function PdfReportButton() {
 
 
             // ==========================================
-            // CUSTOM RANGE
+            // CUSTOM DATE RANGE
             // ==========================================
 
             if (
@@ -289,7 +347,9 @@ function PdfReportButton() {
                     buildDate(
 
                         dates.fromYear,
+
                         dates.fromMonth,
+
                         dates.fromDay
 
                     );
@@ -299,7 +359,9 @@ function PdfReportButton() {
                     buildDate(
 
                         dates.toYear,
+
                         dates.toMonth,
+
                         dates.toDay
 
                     );
@@ -335,7 +397,47 @@ function PdfReportButton() {
 
 
             // ==========================================
-            // REQUEST REPORT
+            // BUILD REQUEST PARAMETERS
+            // ==========================================
+
+            const params = {
+
+                type:
+                    reportType
+
+            };
+
+
+            // Optional donor
+
+            if (
+                donorName.trim()
+            ) {
+
+                params.donor =
+                    donorName.trim();
+
+            }
+
+
+            // Optional date range
+
+            if (
+                from &&
+                to
+            ) {
+
+                params.from =
+                    from;
+
+                params.to =
+                    to;
+
+            }
+
+
+            // ==========================================
+            // REQUEST PDF DATA
             // ==========================================
 
             try {
@@ -343,28 +445,6 @@ function PdfReportButton() {
                 setDownloading(
                     true
                 );
-
-
-                const params = {
-
-                    type:
-                        reportType
-
-                };
-
-
-                if (
-                    from &&
-                    to
-                ) {
-
-                    params.from =
-                        from;
-
-                    params.to =
-                        to;
-
-                }
 
 
                 const res =
@@ -386,12 +466,12 @@ function PdfReportButton() {
                 );
 
 
+                clearFilters();
+
+
                 setShowModal(
                     false
                 );
-
-
-                clearDates();
 
 
             } catch (err) {
@@ -424,16 +504,25 @@ function PdfReportButton() {
 
             <style>
                 {`
+
+                    /* =================================
+                       TOOLBAR
+                    ================================= */
+
                     .pdf-report-toolbar {
                         background: #f5f7f6;
                         padding: 15px 0 0;
                     }
 
+
                     .pdf-download-btn {
+
                         display: flex;
                         align-items: center;
                         gap: 8px;
+
                         min-height: 41px;
+
                         padding: 9px 15px;
 
                         border:
@@ -446,46 +535,84 @@ function PdfReportButton() {
                         color: #198754;
 
                         font-size: 13px;
+
                         font-weight: 600;
 
                         box-shadow:
                             0 3px 12px
-                            rgba(28,47,37,.04);
+                            rgba(
+                                28,
+                                47,
+                                37,
+                                .04
+                            );
+
+                        transition:
+                            .2s ease;
                     }
+
 
                     .pdf-download-btn:hover {
-                        border-color: #198754;
-                        background: #f4fbf7;
+
+                        border-color:
+                            #198754;
+
+                        background:
+                            #f4fbf7;
+
                     }
 
 
-                    /* ===============================
-                       MODAL
-                    =============================== */
+                    /* =================================
+                       OVERLAY
+                    ================================= */
 
                     .pdf-modal-overlay {
+
                         position: fixed;
+
                         inset: 0;
+
                         z-index: 99990;
 
                         display: flex;
+
                         align-items: center;
+
                         justify-content: center;
 
                         padding: 20px;
 
                         background:
-                            rgba(12,24,17,.58);
+                            rgba(
+                                12,
+                                24,
+                                17,
+                                .58
+                            );
 
                         backdrop-filter:
                             blur(4px);
+
                     }
 
+
+                    /* =================================
+                       MODAL
+                    ================================= */
+
                     .pdf-modal {
+
                         width: 100%;
+
                         max-width: 620px;
 
-                        overflow: hidden;
+                        max-height:
+                            calc(
+                                100vh - 40px
+                            );
+
+                        overflow-y: auto;
 
                         background: white;
 
@@ -493,110 +620,189 @@ function PdfReportButton() {
 
                         box-shadow:
                             0 30px 90px
-                            rgba(0,0,0,.20);
+                            rgba(
+                                0,
+                                0,
+                                0,
+                                .20
+                            );
+
                     }
+
+
+                    /* =================================
+                       HEADER
+                    ================================= */
 
                     .pdf-modal-header {
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
 
-                        padding: 20px 24px;
+                        position: sticky;
+
+                        top: 0;
+
+                        z-index: 5;
+
+                        display: flex;
+
+                        align-items: center;
+
+                        justify-content:
+                            space-between;
+
+                        padding:
+                            20px 24px;
+
+                        background: white;
 
                         border-bottom:
-                            1px solid #edf1ee;
+                            1px solid
+                            #edf1ee;
+
                     }
+
 
                     .pdf-header-left {
+
                         display: flex;
+
                         align-items: center;
+
                         gap: 12px;
+
                     }
 
+
                     .pdf-header-icon {
+
                         width: 43px;
+
                         height: 43px;
 
                         display: flex;
+
                         align-items: center;
+
                         justify-content: center;
+
+                        flex-shrink: 0;
 
                         border-radius: 11px;
 
-                        background: #fff0f1;
+                        background:
+                            #fff0f1;
 
-                        color: #dc3545;
+                        color:
+                            #dc3545;
 
                         font-size: 18px;
+
                     }
+
 
                     .pdf-modal-title {
+
                         margin: 0;
 
-                        color: #26372e;
+                        color:
+                            #26372e;
 
                         font-size: 18px;
+
                         font-weight: 700;
+
                     }
+
 
                     .pdf-modal-subtitle {
-                        margin: 3px 0 0;
 
-                        color: #87938c;
+                        margin:
+                            3px 0 0;
+
+                        color:
+                            #87938c;
 
                         font-size: 11px;
+
                     }
 
+
                     .pdf-close-btn {
+
                         width: 36px;
+
                         height: 36px;
 
                         border: none;
+
                         border-radius: 9px;
 
-                        background: #f3f6f4;
+                        background:
+                            #f3f6f4;
 
-                        color: #748079;
+                        color:
+                            #748079;
+
                     }
+
+
+                    /* =================================
+                       BODY
+                    ================================= */
 
                     .pdf-modal-body {
+
                         padding: 25px;
+
                     }
 
 
-                    /* ===============================
-                       DATE BOX
-                    =============================== */
+                    /* =================================
+                       FILTER SECTIONS
+                    ================================= */
 
-                    .date-section {
+                    .pdf-filter-section {
+
                         padding: 17px;
 
                         border:
-                            1px solid #e6ece8;
+                            1px solid
+                            #e6ece8;
 
                         border-radius: 13px;
 
-                        background: #fafcfa;
+                        background:
+                            #fafcfa;
+
                     }
 
-                    .date-section-title {
+
+                    .pdf-filter-title {
+
                         display: flex;
+
                         align-items: center;
+
                         gap: 7px;
 
                         margin-bottom: 13px;
 
-                        color: #36463d;
+                        color:
+                            #36463d;
 
                         font-size: 13px;
+
                         font-weight: 700;
+
                     }
 
-                    .date-input {
+
+                    .pdf-input {
+
                         min-height: 45px;
 
                         border:
-                            1px solid #dfe6e2;
+                            1px solid
+                            #dfe6e2;
 
                         border-radius: 9px;
 
@@ -604,80 +810,176 @@ function PdfReportButton() {
 
                         box-shadow:
                             none !important;
+
                     }
 
-                    .date-input:focus {
-                        border-color: #198754;
+
+                    .pdf-input:focus {
+
+                        border-color:
+                            #198754;
 
                         box-shadow:
                             0 0 0 4px
-                            rgba(25,135,84,.08)
+                            rgba(
+                                25,
+                                135,
+                                84,
+                                .08
+                            )
                             !important;
+
                     }
 
+
+                    /* =================================
+                       HELP BOX
+                    ================================= */
+
                     .pdf-help {
+
                         margin-top: 17px;
 
-                        padding: 12px 14px;
+                        padding:
+                            12px 14px;
 
                         border-radius: 10px;
 
-                        background: #f3f8f5;
+                        background:
+                            #f3f8f5;
 
-                        color: #718078;
+                        color:
+                            #718078;
 
                         font-size: 11px;
-                        line-height: 1.6;
+
+                        line-height: 1.65;
+
                     }
+
+
+                    /* =================================
+                       FOOTER
+                    ================================= */
 
                     .pdf-modal-footer {
+
+                        position: sticky;
+
+                        bottom: 0;
+
                         display: flex;
-                        justify-content: flex-end;
+
+                        justify-content:
+                            flex-end;
+
                         gap: 10px;
 
-                        padding: 17px 24px;
+                        padding:
+                            17px 24px;
 
                         border-top:
-                            1px solid #edf1ee;
+                            1px solid
+                            #edf1ee;
 
-                        background: #fafbfa;
+                        background:
+                            #fafbfa;
+
                     }
 
+
                     .pdf-modal-footer button {
+
                         min-height: 43px;
+
+                        padding:
+                            8px 16px;
 
                         border-radius: 9px;
 
-                        padding: 8px 16px;
-
                         font-size: 13px;
+
                         font-weight: 600;
+
                     }
 
 
-                    @media(max-width:600px) {
+                    /* =================================
+                       MOBILE
+                    ================================= */
+
+                    @media(
+                        max-width:600px
+                    ) {
 
                         .pdf-download-btn {
+
                             width: 100%;
-                            justify-content: center;
+
+                            justify-content:
+                                center;
+
                         }
 
+
+                        .pdf-modal-overlay {
+
+                            padding: 12px;
+
+                        }
+
+
+                        .pdf-modal {
+
+                            max-height:
+                                calc(
+                                    100vh - 24px
+                                );
+
+                        }
+
+
                         .pdf-modal-body {
+
                             padding: 18px;
+
+                        }
+
+
+                        .pdf-modal-header {
+
+                            padding:
+                                17px 18px;
+
+                        }
+
+
+                        .pdf-modal-footer {
+
+                            padding:
+                                14px 18px;
+
                         }
 
                     }
+
                 `}
             </style>
 
 
-            {/* ==========================================
-                SAME BUTTON ON ALL PAGES
-            ========================================== */}
+            {/* =========================================
+                DOWNLOAD BUTTON
+            ========================================= */}
 
             <div className="pdf-report-toolbar">
 
-                <div className="container d-flex justify-content-end">
+                <div
+                    className="
+                        container
+                        d-flex
+                        justify-content-end
+                    "
+                >
 
                     <button
                         type="button"
@@ -700,15 +1002,18 @@ function PdfReportButton() {
             </div>
 
 
-            {/* ==========================================
-                DATE MODAL
-            ========================================== */}
+            {/* =========================================
+                MODAL
+            ========================================= */}
 
             {showModal && (
 
                 <div className="pdf-modal-overlay">
 
                     <div className="pdf-modal">
+
+
+                        {/* HEADER */}
 
                         <div className="pdf-modal-header">
 
@@ -724,11 +1029,15 @@ function PdfReportButton() {
                                 <div>
 
                                     <h3 className="pdf-modal-title">
+
                                         Download Statement
+
                                     </h3>
 
                                     <p className="pdf-modal-subtitle">
-                                        Select statement period
+
+                                        Choose optional donor and statement period
+
                                     </p>
 
                                 </div>
@@ -742,10 +1051,8 @@ function PdfReportButton() {
                                 disabled={
                                     downloading
                                 }
-                                onClick={() =>
-                                    setShowModal(
-                                        false
-                                    )
+                                onClick={
+                                    closeModal
                                 }
                             >
 
@@ -756,14 +1063,67 @@ function PdfReportButton() {
                         </div>
 
 
+                        {/* BODY */}
+
                         <div className="pdf-modal-body">
 
 
-                            {/* FROM DATE */}
+                            {/* =================================
+                                DONOR NAME
+                            ================================= */}
 
-                            <div className="date-section mb-3">
+                            <div className="pdf-filter-section mb-3">
 
-                                <div className="date-section-title">
+                                <div className="pdf-filter-title">
+
+                                    <FaUser />
+
+                                    Donor Name
+
+                                </div>
+
+
+                                <input
+                                    type="text"
+                                    className="form-control pdf-input"
+                                    placeholder="Optional — leave empty for all donors"
+                                    value={
+                                        donorName
+                                    }
+                                    onChange={(e) =>
+                                        setDonorName(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+
+                                {reportType === "out" && (
+
+                                    <small
+                                        className="
+                                            d-block
+                                            text-muted
+                                            mt-2
+                                        "
+                                    >
+
+                                        Donor filtering does not affect Expense Statements.
+
+                                    </small>
+
+                                )}
+
+                            </div>
+
+
+                            {/* =================================
+                                FROM DATE
+                            ================================= */}
+
+                            <div className="pdf-filter-section mb-3">
+
+                                <div className="pdf-filter-title">
 
                                     <FaCalendarAlt />
 
@@ -775,15 +1135,21 @@ function PdfReportButton() {
                                 <div className="row g-2">
 
 
+                                    {/* DAY */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Day
+
                                         </label>
+
 
                                         <input
                                             name="fromDay"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="DD"
                                             maxLength="2"
                                             value={
@@ -797,15 +1163,21 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* MONTH */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Month
+
                                         </label>
+
 
                                         <input
                                             name="fromMonth"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="MM"
                                             maxLength="2"
                                             value={
@@ -819,15 +1191,21 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* YEAR */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Year
+
                                         </label>
+
 
                                         <input
                                             name="fromYear"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="YYYY"
                                             maxLength="4"
                                             value={
@@ -845,11 +1223,13 @@ function PdfReportButton() {
                             </div>
 
 
-                            {/* TO DATE */}
+                            {/* =================================
+                                TO DATE
+                            ================================= */}
 
-                            <div className="date-section">
+                            <div className="pdf-filter-section">
 
-                                <div className="date-section-title">
+                                <div className="pdf-filter-title">
 
                                     <FaCalendarAlt />
 
@@ -861,15 +1241,21 @@ function PdfReportButton() {
                                 <div className="row g-2">
 
 
+                                    {/* DAY */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Day
+
                                         </label>
+
 
                                         <input
                                             name="toDay"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="DD"
                                             maxLength="2"
                                             value={
@@ -883,15 +1269,21 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* MONTH */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Month
+
                                         </label>
+
 
                                         <input
                                             name="toMonth"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="MM"
                                             maxLength="2"
                                             value={
@@ -905,15 +1297,21 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* YEAR */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
+
                                             Year
+
                                         </label>
+
 
                                         <input
                                             name="toYear"
-                                            className="form-control date-input"
+                                            inputMode="numeric"
+                                            className="form-control pdf-input"
                                             placeholder="YYYY"
                                             maxLength="4"
                                             value={
@@ -931,31 +1329,48 @@ function PdfReportButton() {
                             </div>
 
 
+                            {/* =================================
+                                HELP
+                            ================================= */}
+
                             <div className="pdf-help">
 
                                 <strong>
-                                    Complete statement:
+                                    Donor:
                                 </strong>
 
                                 {" "}
 
-                                Leave all date fields empty to download all records from the beginning through today.
+                                Optional. Leave it empty to include all donors.
 
                                 <br />
 
 
                                 <strong>
-                                    Custom statement:
+                                    Complete history:
                                 </strong>
 
                                 {" "}
 
-                                Every Day, Month and Year field is required.
+                                Leave every Day, Month and Year field empty.
+
+                                <br />
+
+
+                                <strong>
+                                    Custom period:
+                                </strong>
+
+                                {" "}
+
+                                All six Day, Month and Year fields must be completed.
 
                             </div>
 
                         </div>
 
+
+                        {/* FOOTER */}
 
                         <div className="pdf-modal-footer">
 
@@ -966,11 +1381,11 @@ function PdfReportButton() {
                                     downloading
                                 }
                                 onClick={
-                                    clearDates
+                                    clearFilters
                                 }
                             >
 
-                                Clear Dates
+                                Clear Filters
 
                             </button>
 
@@ -990,7 +1405,13 @@ function PdfReportButton() {
 
                                     <>
 
-                                        <span className="spinner-border spinner-border-sm me-2" />
+                                        <span
+                                            className="
+                                                spinner-border
+                                                spinner-border-sm
+                                                me-2
+                                            "
+                                        />
 
                                         Generating...
 

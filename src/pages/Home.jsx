@@ -12,9 +12,6 @@ import DonationForm
 import ExpenseForm
     from "../components/ExpenseForm";
 
-import GuestDonationRequestForm
-    from "../components/GuestDonationRequestForm";
-
 import api
     from "../api/api";
 
@@ -402,10 +399,6 @@ function Home() {
                         </div>
 
                     </div>
-
-                    {guest && (
-                        <GuestDonationRequestForm />
-                    )}
 
                 </div>
 

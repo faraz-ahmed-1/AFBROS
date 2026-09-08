@@ -7,10 +7,7 @@ import {
     FaChartLine,
     FaTrophy,
     FaFilter,
-    FaTimes,
-    FaCheck,
-    FaBan,
-    FaClock
+    FaTimes
 } from "react-icons/fa";
 
 import {
@@ -18,8 +15,7 @@ import {
     useState
 } from "react";
 
-import api
-    from "../api/api";
+import api from "../api/api";
 
 import {
     useToast
@@ -42,15 +38,13 @@ function Depositors() {
         isFinanceManager();
 
 
+    // ==================================================
+    // STATES
+    // ==================================================
+
     const [
         donations,
         setDonations
-    ] = useState([]);
-
-
-    const [
-        pending,
-        setPending
     ] = useState([]);
 
 
@@ -97,21 +91,9 @@ function Depositors() {
 
 
     const [
-        rejectTarget,
-        setRejectTarget
-    ] = useState(null);
-
-
-    const [
         loading,
         setLoading
     ] = useState(true);
-
-
-    const [
-        pendingLoading,
-        setPendingLoading
-    ] = useState(false);
 
 
     const [
@@ -124,12 +106,6 @@ function Depositors() {
         deleting,
         setDeleting
     ] = useState(false);
-
-
-    const [
-        processingRequestId,
-        setProcessingRequestId
-    ] = useState(null);
 
 
     const recordsPerPage =
@@ -165,9 +141,13 @@ function Depositors() {
                     : []
             );
 
+
         } catch (err) {
 
-            console.error(err);
+            console.error(
+                "FETCH DONATIONS ERROR:",
+                err
+            );
 
 
             if (showError) {
@@ -179,6 +159,7 @@ function Depositors() {
 
             }
 
+
         } finally {
 
             setLoading(false);
@@ -189,57 +170,8 @@ function Depositors() {
 
 
     // ==================================================
-    // FETCH PENDING
+    // LOAD WHEN SEARCH / SORT CHANGES
     // ==================================================
-
-    const fetchPending = async () => {
-
-        if (!manager) {
-            return;
-        }
-
-
-        try {
-
-            setPendingLoading(
-                true
-            );
-
-
-            const res =
-                await api.get(
-                    "/donations/requests"
-                );
-
-
-            setPending(
-                Array.isArray(
-                    res.data
-                )
-                    ? res.data
-                    : []
-            );
-
-        } catch (err) {
-
-            console.error(err);
-
-
-            toast.error(
-                err.response?.data?.message ||
-                "Unable to load pending donations."
-            );
-
-        } finally {
-
-            setPendingLoading(
-                false
-            );
-
-        }
-
-    };
-
 
     useEffect(() => {
 
@@ -251,14 +183,9 @@ function Depositors() {
     ]);
 
 
-    useEffect(() => {
-
-        if (manager) {
-            fetchPending();
-        }
-
-    }, [manager]);
-
+    // ==================================================
+    // RESET PAGE WHEN DATE FILTER CHANGES
+    // ==================================================
 
     useEffect(() => {
 
@@ -271,7 +198,7 @@ function Depositors() {
 
 
     // ==================================================
-    // EDIT
+    // OPEN EDIT
     // ==================================================
 
     const openEditModal = (
@@ -279,7 +206,9 @@ function Depositors() {
     ) => {
 
         if (!manager) {
+
             return;
+
         }
 
 
@@ -313,23 +242,37 @@ function Depositors() {
     };
 
 
+    // ==================================================
+    // EDIT FIELD CHANGE
+    // ==================================================
+
     const handleEditChange = (
         e
     ) => {
+
+        const {
+            name,
+            value
+        } = e.target;
+
 
         setEditingDonation(
             (current) => ({
 
                 ...current,
 
-                [e.target.name]:
-                    e.target.value
+                [name]:
+                    value
 
             })
         );
 
     };
 
+
+    // ==================================================
+    // UPDATE DONATION
+    // ==================================================
 
     const updateDonation =
         async () => {
@@ -338,7 +281,9 @@ function Depositors() {
                 !manager ||
                 !editingDonation
             ) {
+
                 return;
+
             }
 
 
@@ -425,15 +370,20 @@ function Depositors() {
                     "Donation updated successfully."
                 );
 
+
             } catch (err) {
 
-                console.error(err);
+                console.error(
+                    "UPDATE DONATION ERROR:",
+                    err
+                );
 
 
                 toast.error(
                     err.response?.data?.message ||
                     "Unable to update donation."
                 );
+
 
             } finally {
 
@@ -445,7 +395,7 @@ function Depositors() {
 
 
     // ==================================================
-    // DELETE
+    // DELETE DONATION
     // ==================================================
 
     const deleteDonation =
@@ -455,7 +405,9 @@ function Depositors() {
                 !manager ||
                 !deleteTarget
             ) {
+
                 return;
+
             }
 
 
@@ -468,6 +420,23 @@ function Depositors() {
                     await api.delete(
                         `/donations/${deleteTarget.id}`
                     );
+
+
+                /*
+                    If the same donation
+                    was open in edit modal.
+                */
+
+                if (
+                    editingDonation?.id ===
+                    deleteTarget.id
+                ) {
+
+                    setEditingDonation(
+                        null
+                    );
+
+                }
 
 
                 setDeleteTarget(
@@ -485,9 +454,13 @@ function Depositors() {
                     "Donation deleted successfully."
                 );
 
+
             } catch (err) {
 
-                console.error(err);
+                console.error(
+                    "DELETE DONATION ERROR:",
+                    err
+                );
 
 
                 toast.error(
@@ -495,130 +468,10 @@ function Depositors() {
                     "Unable to delete donation."
                 );
 
+
             } finally {
 
                 setDeleting(false);
-
-            }
-
-        };
-
-
-    // ==================================================
-    // APPROVE PENDING
-    // ==================================================
-
-    const approveRequest =
-        async (request) => {
-
-            if (!manager) {
-                return;
-            }
-
-
-            try {
-
-                setProcessingRequestId(
-                    request.id
-                );
-
-
-                const res =
-                    await api.post(
-                        `/donations/requests/${request.id}/approve`
-                    );
-
-
-                await Promise.all([
-                    fetchDonations(
-                        false
-                    ),
-                    fetchPending()
-                ]);
-
-
-                toast.success(
-                    res.data?.message ||
-                    "Donation approved successfully."
-                );
-
-            } catch (err) {
-
-                console.error(err);
-
-
-                toast.error(
-                    err.response?.data?.message ||
-                    "Unable to approve donation."
-                );
-
-            } finally {
-
-                setProcessingRequestId(
-                    null
-                );
-
-            }
-
-        };
-
-
-    // ==================================================
-    // REJECT
-    // ==================================================
-
-    const rejectRequest =
-        async () => {
-
-            if (
-                !manager ||
-                !rejectTarget
-            ) {
-                return;
-            }
-
-
-            try {
-
-                setProcessingRequestId(
-                    rejectTarget.id
-                );
-
-
-                const res =
-                    await api.delete(
-                        `/donations/requests/${rejectTarget.id}/reject`
-                    );
-
-
-                setRejectTarget(
-                    null
-                );
-
-
-                await fetchPending();
-
-
-                toast.success(
-                    res.data?.message ||
-                    "Donation request rejected."
-                );
-
-            } catch (err) {
-
-                console.error(err);
-
-
-                toast.error(
-                    err.response?.data?.message ||
-                    "Unable to reject donation."
-                );
-
-            } finally {
-
-                setProcessingRequestId(
-                    null
-                );
 
             }
 
@@ -643,6 +496,10 @@ function Depositors() {
         );
 
 
+    // ==================================================
+    // GROUP UNIQUE DONORS
+    // ==================================================
+
     const groupedDonors =
         {};
 
@@ -651,15 +508,20 @@ function Depositors() {
         (donation) => {
 
             const key =
-                donation.phone?.trim() ||
+                donation.phone
+                    ?.trim() ||
                 `record-${donation.id}`;
 
 
             if (
-                !groupedDonors[key]
+                !groupedDonors[
+                    key
+                ]
             ) {
 
-                groupedDonors[key] = {
+                groupedDonors[
+                    key
+                ] = {
 
                     full_name:
                         donation.full_name,
@@ -692,6 +554,10 @@ function Depositors() {
         ).length;
 
 
+    // ==================================================
+    // TOP 5 DONORS
+    // ==================================================
+
     const topDonors =
         Object.values(
             groupedDonors
@@ -707,6 +573,10 @@ function Depositors() {
             );
 
 
+    // ==================================================
+    // AVERAGE
+    // ==================================================
+
     const averageDonation =
         donations.length
             ? Math.round(
@@ -715,6 +585,10 @@ function Depositors() {
             )
             : 0;
 
+
+    // ==================================================
+    // HIGHEST
+    // ==================================================
 
     const highestDonation =
         donations.length
@@ -750,7 +624,9 @@ function Depositors() {
                     fromDate &&
                     date < fromDate
                 ) {
+
                     return false;
+
                 }
 
 
@@ -758,7 +634,9 @@ function Depositors() {
                     toDate &&
                     date > toDate
                 ) {
+
                     return false;
+
                 }
 
 
@@ -794,6 +672,10 @@ function Depositors() {
         );
 
 
+    // ==================================================
+    // KEEP PAGE VALID AFTER DELETE / FILTER
+    // ==================================================
+
     useEffect(() => {
 
         const maxPage =
@@ -820,6 +702,10 @@ function Depositors() {
     ]);
 
 
+    // ==================================================
+    // CLEAR FILTERS
+    // ==================================================
+
     const clearFilters = () => {
 
         setSearch("");
@@ -835,6 +721,19 @@ function Depositors() {
     };
 
 
+    const filtersActive =
+        Boolean(
+            search ||
+            fromDate ||
+            toDate ||
+            sort !== "id"
+        );
+
+
+    // ==================================================
+    // UI
+    // ==================================================
+
     return (
         <>
 
@@ -845,6 +744,11 @@ function Depositors() {
                         background: #f5f7f6;
                         padding: 40px 0 70px;
                     }
+
+
+                    /* =================================
+                       PAGE HEADER
+                    ================================= */
 
                     .donors-title {
                         margin: 0;
@@ -859,6 +763,11 @@ function Depositors() {
                         font-size: 14px;
                     }
 
+
+                    /* =================================
+                       READ ONLY
+                    ================================= */
+
                     .readonly-notice {
                         margin-bottom: 22px;
                         padding: 13px 16px;
@@ -868,6 +777,11 @@ function Depositors() {
                         color: #796322;
                         font-size: 12px;
                     }
+
+
+                    /* =================================
+                       CARDS
+                    ================================= */
 
                     .afbros-card,
                     .donor-stat {
@@ -926,6 +840,11 @@ function Depositors() {
                         font-weight: 700;
                     }
 
+
+                    /* =================================
+                       TOP DONORS
+                    ================================= */
+
                     .top-card {
                         margin-top: 24px;
                         padding: 22px 24px;
@@ -943,6 +862,25 @@ function Depositors() {
                     .top-row:last-child {
                         border: none;
                     }
+
+                    .top-rank {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 29px;
+                        height: 29px;
+                        margin-right: 9px;
+                        border-radius: 50%;
+                        background: #edf7f1;
+                        color: #198754;
+                        font-size: 11px;
+                        font-weight: 700;
+                    }
+
+
+                    /* =================================
+                       FILTERS
+                    ================================= */
 
                     .filter-card {
                         margin-top: 24px;
@@ -985,13 +923,29 @@ function Depositors() {
                         padding-left: 42px;
                     }
 
-                    .records-card,
-                    .pending-card {
+                    .clear-filter-btn {
+                        border: none;
+                        background: transparent;
+                        color: #dc3545;
+                        padding: 0;
+                        font-size: 12px;
+                        font-weight: 600;
+                    }
+
+
+                    /* =================================
+                       RECORD TABLE
+                    ================================= */
+
+                    .records-card {
                         margin-top: 24px;
                         overflow: hidden;
                     }
 
                     .card-heading {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
                         padding: 20px 24px;
                         border-bottom:
                             1px solid #edf1ee;
@@ -1030,11 +984,17 @@ function Depositors() {
                         white-space: nowrap;
                     }
 
+
+                    /* =================================
+                       ACTIONS
+                    ================================= */
+
                     .action-btn {
                         width: 35px;
                         height: 35px;
                         border: none;
                         border-radius: 8px;
+                        transition: .15s ease;
                     }
 
                     .edit-btn {
@@ -1042,15 +1002,28 @@ function Depositors() {
                         color: #d69500;
                     }
 
+                    .edit-btn:hover:not(:disabled) {
+                        background: #ffe9ac;
+                    }
+
                     .delete-btn {
                         background: #fff0f1;
                         color: #dc3545;
+                    }
+
+                    .delete-btn:hover:not(:disabled) {
+                        background: #ffdfe2;
                     }
 
                     .action-btn:disabled {
                         opacity: .35;
                         cursor: not-allowed;
                     }
+
+
+                    /* =================================
+                       PAGINATION
+                    ================================= */
 
                     .pagination-area {
                         padding: 18px 24px;
@@ -1069,31 +1042,19 @@ function Depositors() {
                         border:
                             1px solid #dce5e0;
                         border-radius: 9px;
-                    }
-
-                    .approve-btn,
-                    .reject-btn {
-                        border: none;
-                        border-radius: 8px;
-                        padding: 8px 12px;
-                        font-size: 12px;
+                        font-size: 13px;
                         font-weight: 600;
                     }
 
-                    .approve-btn {
-                        background: #eaf7f0;
-                        color: #198754;
+                    .pagination-area button:disabled {
+                        opacity: .4;
+                        cursor: not-allowed;
                     }
 
-                    .reject-btn {
-                        background: #fff0f1;
-                        color: #dc3545;
-                    }
 
-                    .approve-btn:disabled,
-                    .reject-btn:disabled {
-                        opacity: .5;
-                    }
+                    /* =================================
+                       EDIT MODAL
+                    ================================= */
 
                     .edit-overlay {
                         position: fixed;
@@ -1140,13 +1101,20 @@ function Depositors() {
                         gap: 10px;
                         border-top:
                             1px solid #edf1ee;
+                        background: #fafbfa;
                     }
 
                     .edit-body {
                         padding: 24px;
                     }
 
+
+                    /* =================================
+                       MOBILE
+                    ================================= */
+
                     @media(max-width:767px) {
+
                         .donors-page {
                             padding-top: 25px;
                         }
@@ -1158,6 +1126,11 @@ function Depositors() {
                         .pagination-area {
                             flex-wrap: wrap;
                         }
+
+                        .card-heading {
+                            align-items: flex-start;
+                        }
+
                     }
                 `}
             </style>
@@ -1167,12 +1140,22 @@ function Depositors() {
 
                 <div className="container">
 
+
+                    {/* =================================
+                        PAGE HEADER
+                    ================================= */}
+
                     <h1 className="donors-title">
+
                         Donations & Donors
+
                     </h1>
 
+
                     <p className="donors-subtitle">
+
                         Monitor donations and manage donor records.
+
                     </p>
 
 
@@ -1187,66 +1170,97 @@ function Depositors() {
                     )}
 
 
-                    {/* STATS */}
+                    {/* =================================
+                        STATISTICS
+                    ================================= */}
 
                     <div className="row g-3">
+
+
+                        {/* TOTAL DONATIONS */}
 
                         <div className="col-xl-3 col-md-6">
 
                             <div className="donor-stat">
 
                                 <div className="stat-icon stat-green">
+
                                     <FaMoneyBillWave />
+
                                 </div>
 
                                 <div className="stat-label">
+
                                     Total Donations
+
                                 </div>
 
                                 <h3 className="stat-value">
-                                    Rs. {totalAmount.toLocaleString()}
+
+                                    Rs.{" "}
+
+                                    {totalAmount.toLocaleString()}
+
                                 </h3>
 
                             </div>
 
                         </div>
 
+
+                        {/* TOTAL DONORS */}
 
                         <div className="col-xl-3 col-md-6">
 
                             <div className="donor-stat">
 
                                 <div className="stat-icon stat-blue">
+
                                     <FaUsers />
+
                                 </div>
 
                                 <div className="stat-label">
+
                                     Total Donors
+
                                 </div>
 
                                 <h3 className="stat-value">
+
                                     {uniqueDonors}
+
                                 </h3>
 
                             </div>
 
                         </div>
 
+
+                        {/* AVERAGE */}
 
                         <div className="col-xl-3 col-md-6">
 
                             <div className="donor-stat">
 
                                 <div className="stat-icon stat-orange">
+
                                     <FaChartLine />
+
                                 </div>
 
                                 <div className="stat-label">
+
                                     Average Donation
+
                                 </div>
 
                                 <h3 className="stat-value">
-                                    Rs. {averageDonation.toLocaleString()}
+
+                                    Rs.{" "}
+
+                                    {averageDonation.toLocaleString()}
+
                                 </h3>
 
                             </div>
@@ -1254,20 +1268,30 @@ function Depositors() {
                         </div>
 
 
+                        {/* HIGHEST */}
+
                         <div className="col-xl-3 col-md-6">
 
                             <div className="donor-stat">
 
                                 <div className="stat-icon stat-purple">
+
                                     <FaTrophy />
+
                                 </div>
 
                                 <div className="stat-label">
+
                                     Highest Donation
+
                                 </div>
 
                                 <h3 className="stat-value">
-                                    Rs. {highestDonation.toLocaleString()}
+
+                                    Rs.{" "}
+
+                                    {highestDonation.toLocaleString()}
+
                                 </h3>
 
                             </div>
@@ -1277,7 +1301,9 @@ function Depositors() {
                     </div>
 
 
-                    {/* TOP DONORS */}
+                    {/* =================================
+                        TOP DONORS
+                    ================================= */}
 
                     <div className="afbros-card top-card">
 
@@ -1292,8 +1318,10 @@ function Depositors() {
 
                         {topDonors.length === 0 ? (
 
-                            <div className="text-muted">
+                            <div className="text-muted py-2">
+
                                 No donor data available.
+
                             </div>
 
                         ) : (
@@ -1312,14 +1340,29 @@ function Depositors() {
                                         className="top-row"
                                     >
 
-                                        <strong>
-                                            #{index + 1}{" "}
-                                            {donor.full_name}
-                                        </strong>
+                                        <div>
+
+                                            <span className="top-rank">
+
+                                                {index + 1}
+
+                                            </span>
+
+                                            <strong>
+
+                                                {donor.full_name}
+
+                                            </strong>
+
+                                        </div>
+
 
                                         <strong className="text-success">
+
                                             Rs.{" "}
+
                                             {donor.totalDonation.toLocaleString()}
+
                                         </strong>
 
                                     </div>
@@ -1332,11 +1375,20 @@ function Depositors() {
                     </div>
 
 
-                    {/* FILTERS */}
+                    {/* =================================
+                        SEARCH + FILTERS
+                    ================================= */}
 
                     <div className="afbros-card filter-card">
 
-                        <div className="d-flex justify-content-between align-items-center mb-3">
+                        <div
+                            className="
+                                d-flex
+                                justify-content-between
+                                align-items-center
+                                mb-3
+                            "
+                        >
 
                             <strong>
 
@@ -1346,20 +1398,37 @@ function Depositors() {
 
                             </strong>
 
-                            <button
-                                type="button"
-                                className="btn btn-link text-danger p-0 text-decoration-none"
-                                onClick={clearFilters}
-                            >
-                                Clear
-                            </button>
+
+                            {filtersActive && (
+
+                                <button
+                                    type="button"
+                                    className="clear-filter-btn"
+                                    onClick={clearFilters}
+                                >
+
+                                    Clear Filters
+
+                                </button>
+
+                            )}
 
                         </div>
 
 
                         <div className="row g-3">
 
+
+                            {/* SEARCH */}
+
                             <div className="col-lg-5">
+
+                                <label className="form-label small fw-semibold">
+
+                                    Search
+
+                                </label>
+
 
                                 <div className="search-wrap">
 
@@ -1387,7 +1456,15 @@ function Depositors() {
                             </div>
 
 
+                            {/* FROM */}
+
                             <div className="col-lg-2">
+
+                                <label className="form-label small fw-semibold">
+
+                                    From Date
+
+                                </label>
 
                                 <input
                                     type="date"
@@ -1403,7 +1480,15 @@ function Depositors() {
                             </div>
 
 
+                            {/* TO */}
+
                             <div className="col-lg-2">
+
+                                <label className="form-label small fw-semibold">
+
+                                    To Date
+
+                                </label>
 
                                 <input
                                     type="date"
@@ -1419,7 +1504,15 @@ function Depositors() {
                             </div>
 
 
+                            {/* SORT */}
+
                             <div className="col-lg-3">
+
+                                <label className="form-label small fw-semibold">
+
+                                    Sort By
+
+                                </label>
 
                                 <select
                                     className="form-select donor-control"
@@ -1438,23 +1531,33 @@ function Depositors() {
                                 >
 
                                     <option value="id">
+
                                         Default
+
                                     </option>
 
                                     <option value="amountAsc">
+
                                         Amount Low → High
+
                                     </option>
 
                                     <option value="amountDesc">
+
                                         Amount High → Low
+
                                     </option>
 
                                     <option value="dateNewest">
+
                                         Newest First
+
                                     </option>
 
                                     <option value="dateOldest">
+
                                         Oldest First
+
                                     </option>
 
                                 </select>
@@ -1466,19 +1569,35 @@ function Depositors() {
                     </div>
 
 
-                    {/* APPROVED DONATIONS */}
+                    {/* =================================
+                        DONATION RECORDS
+                    ================================= */}
 
                     <div className="afbros-card records-card">
 
                         <div className="card-heading">
 
-                            <h5 className="fw-bold mb-1">
-                                Donation Records
-                            </h5>
+                            <div>
 
-                            <small className="text-muted">
-                                {filteredDonations.length} records found
-                            </small>
+                                <h5 className="fw-bold mb-1">
+
+                                    Donation Records
+
+                                </h5>
+
+                                <small className="text-muted">
+
+                                    {filteredDonations.length} record
+
+                                    {filteredDonations.length !== 1
+                                        ? "s"
+                                        : ""}
+
+                                    {" "}found
+
+                                </small>
+
+                            </div>
 
                         </div>
 
@@ -1492,23 +1611,33 @@ function Depositors() {
                                     <tr>
 
                                         <th>
+
                                             Full Name
+
                                         </th>
 
                                         <th>
+
                                             Phone
+
                                         </th>
 
                                         <th>
+
                                             Amount
+
                                         </th>
 
                                         <th>
+
                                             Date
+
                                         </th>
 
                                         <th className="text-center">
+
                                             Actions
+
                                         </th>
 
                                     </tr>
@@ -1517,6 +1646,9 @@ function Depositors() {
 
 
                                 <tbody>
+
+
+                                    {/* LOADING */}
 
                                     {loading ? (
 
@@ -1527,7 +1659,14 @@ function Depositors() {
                                                 className="text-center py-5"
                                             >
 
-                                                <span className="spinner-border spinner-border-sm text-success me-2" />
+                                                <span
+                                                    className="
+                                                        spinner-border
+                                                        spinner-border-sm
+                                                        text-success
+                                                        me-2
+                                                    "
+                                                />
 
                                                 Loading donations...
 
@@ -1535,13 +1674,20 @@ function Depositors() {
 
                                         </tr>
 
+
                                     ) : currentDonations.length === 0 ? (
+
+                                        // EMPTY
 
                                         <tr>
 
                                             <td
                                                 colSpan="5"
-                                                className="text-center text-muted py-5"
+                                                className="
+                                                    text-center
+                                                    text-muted
+                                                    py-5
+                                                "
                                             >
 
                                                 No donation records found.
@@ -1550,20 +1696,30 @@ function Depositors() {
 
                                         </tr>
 
+
                                     ) : (
+
+                                        // RECORDS
 
                                         currentDonations.map(
                                             (donation) => (
 
                                                 <tr key={donation.id}>
 
+
                                                     <td className="donor-name">
+
                                                         {donation.full_name}
+
                                                     </td>
 
+
                                                     <td>
+
                                                         {donation.phone}
+
                                                     </td>
+
 
                                                     <td className="donor-amount">
 
@@ -1575,16 +1731,33 @@ function Depositors() {
 
                                                     </td>
 
+
                                                     <td>
-                                                        {donation.donation_date?.substring(0, 10)}
+
+                                                        {donation.donation_date
+                                                            ?.substring(
+                                                                0,
+                                                                10
+                                                            )}
+
                                                     </td>
+
 
                                                     <td className="text-center">
 
+
+                                                        {/* EDIT */}
+
                                                         <button
                                                             type="button"
-                                                            className="action-btn edit-btn me-2"
-                                                            disabled={!manager}
+                                                            className="
+                                                                action-btn
+                                                                edit-btn
+                                                                me-2
+                                                            "
+                                                            disabled={
+                                                                !manager
+                                                            }
                                                             title={
                                                                 manager
                                                                     ? "Edit donation"
@@ -1596,13 +1769,23 @@ function Depositors() {
                                                                 )
                                                             }
                                                         >
+
                                                             <FaEdit />
+
                                                         </button>
+
+
+                                                        {/* DELETE */}
 
                                                         <button
                                                             type="button"
-                                                            className="action-btn delete-btn"
-                                                            disabled={!manager}
+                                                            className="
+                                                                action-btn
+                                                                delete-btn
+                                                            "
+                                                            disabled={
+                                                                !manager
+                                                            }
                                                             title={
                                                                 manager
                                                                     ? "Delete donation"
@@ -1610,7 +1793,9 @@ function Depositors() {
                                                             }
                                                             onClick={() => {
 
-                                                                if (manager) {
+                                                                if (
+                                                                    manager
+                                                                ) {
 
                                                                     setDeleteTarget(
                                                                         donation
@@ -1620,7 +1805,9 @@ function Depositors() {
 
                                                             }}
                                                         >
+
                                                             <FaTrash />
+
                                                         </button>
 
                                                     </td>
@@ -1639,6 +1826,10 @@ function Depositors() {
                         </div>
 
 
+                        {/* =================================
+                            PAGINATION
+                        ================================= */}
+
                         {filteredDonations.length > 0 && (
 
                             <div className="pagination-area">
@@ -1646,7 +1837,8 @@ function Depositors() {
                                 <button
                                     type="button"
                                     disabled={
-                                        currentPage === 1
+                                        currentPage ===
+                                        1
                                     }
                                     onClick={() =>
                                         setCurrentPage(
@@ -1655,22 +1847,28 @@ function Depositors() {
                                         )
                                     }
                                 >
+
                                     ← Previous
+
                                 </button>
 
 
-                                <span>
+                                <span className="small">
 
                                     Page{" "}
 
                                     <strong>
+
                                         {currentPage}
+
                                     </strong>
 
                                     {" "}of{" "}
 
                                     <strong>
+
                                         {totalPages || 1}
+
                                     </strong>
 
                                 </span>
@@ -1689,7 +1887,9 @@ function Depositors() {
                                         )
                                     }
                                 >
+
                                     Next →
+
                                 </button>
 
                             </div>
@@ -1699,219 +1899,9 @@ function Depositors() {
                     </div>
 
 
-                    {/* PENDING REQUESTS */}
-
-                    {manager && (
-
-                        <div className="afbros-card pending-card">
-
-                            <div className="card-heading">
-
-                                <h5 className="fw-bold mb-1">
-
-                                    <FaClock className="me-2 text-warning" />
-
-                                    Pending Donation Verification
-
-                                </h5>
-
-                                <small className="text-muted">
-
-                                    {pending.length} request
-
-                                    {pending.length !== 1
-                                        ? "s"
-                                        : ""}
-
-                                    {" "}awaiting review
-
-                                </small>
-
-                            </div>
-
-
-                            <div className="table-responsive">
-
-                                <table className="table donor-table">
-
-                                    <thead>
-
-                                        <tr>
-
-                                            <th>
-                                                Name
-                                            </th>
-
-                                            <th>
-                                                Phone
-                                            </th>
-
-                                            <th>
-                                                TRX ID
-                                            </th>
-
-                                            <th>
-                                                Amount
-                                            </th>
-
-                                            <th>
-                                                Date
-                                            </th>
-
-                                            <th>
-                                                Time
-                                            </th>
-
-                                            <th className="text-center">
-                                                Decision
-                                            </th>
-
-                                        </tr>
-
-                                    </thead>
-
-
-                                    <tbody>
-
-                                        {pendingLoading ? (
-
-                                            <tr>
-
-                                                <td
-                                                    colSpan="7"
-                                                    className="text-center py-5"
-                                                >
-
-                                                    <span className="spinner-border spinner-border-sm text-success me-2" />
-
-                                                    Loading pending requests...
-
-                                                </td>
-
-                                            </tr>
-
-                                        ) : pending.length === 0 ? (
-
-                                            <tr>
-
-                                                <td
-                                                    colSpan="7"
-                                                    className="text-center text-muted py-5"
-                                                >
-
-                                                    No pending donation requests.
-
-                                                </td>
-
-                                            </tr>
-
-                                        ) : (
-
-                                            pending.map(
-                                                (request) => (
-
-                                                    <tr key={request.id}>
-
-                                                        <td className="fw-semibold">
-                                                            {request.full_name}
-                                                        </td>
-
-                                                        <td>
-                                                            {request.phone}
-                                                        </td>
-
-                                                        <td className="fw-semibold">
-                                                            {request.trx_id}
-                                                        </td>
-
-                                                        <td className="donor-amount">
-
-                                                            Rs.{" "}
-
-                                                            {Number(
-                                                                request.amount
-                                                            ).toLocaleString()}
-
-                                                        </td>
-
-                                                        <td>
-                                                            {request.transaction_date?.substring(0, 10)}
-                                                        </td>
-
-                                                        <td>
-                                                            {request.transaction_time?.substring(0, 5)}
-                                                        </td>
-
-                                                        <td className="text-center">
-
-                                                            <button
-                                                                type="button"
-                                                                className="approve-btn me-2"
-                                                                disabled={
-                                                                    processingRequestId ===
-                                                                    request.id
-                                                                }
-                                                                onClick={() =>
-                                                                    approveRequest(
-                                                                        request
-                                                                    )
-                                                                }
-                                                            >
-
-                                                                {processingRequestId === request.id ? (
-
-                                                                    <span className="spinner-border spinner-border-sm" />
-
-                                                                ) : (
-
-                                                                    <>
-                                                                        <FaCheck className="me-1" />
-                                                                        Approve
-                                                                    </>
-
-                                                                )}
-
-                                                            </button>
-
-
-                                                            <button
-                                                                type="button"
-                                                                className="reject-btn"
-                                                                disabled={
-                                                                    processingRequestId ===
-                                                                    request.id
-                                                                }
-                                                                onClick={() =>
-                                                                    setRejectTarget(
-                                                                        request
-                                                                    )
-                                                                }
-                                                            >
-                                                                <FaBan className="me-1" />
-                                                                Reject
-                                                            </button>
-
-                                                        </td>
-
-                                                    </tr>
-
-                                                )
-                                            )
-
-                                        )}
-
-                                    </tbody>
-
-                                </table>
-
-                            </div>
-
-                        </div>
-
-                    )}
-
-
-                    {/* EDIT MODAL */}
+                    {/* =================================
+                        EDIT DONATION MODAL
+                    ================================= */}
 
                     {manager &&
                         editingDonation && (
@@ -1920,10 +1910,15 @@ function Depositors() {
 
                             <div className="edit-modal">
 
+
+                                {/* HEADER */}
+
                                 <div className="edit-header">
 
                                     <h5 className="fw-bold m-0">
+
                                         Edit Donation
+
                                     </h5>
 
                                     <button
@@ -1936,21 +1931,32 @@ function Depositors() {
                                             )
                                         }
                                     >
+
                                         <FaTimes />
+
                                     </button>
 
                                 </div>
 
 
+                                {/* BODY */}
+
                                 <div className="edit-body">
 
+
                                     <label className="form-label">
+
                                         Full Name
+
                                     </label>
 
                                     <input
                                         name="fullName"
-                                        className="form-control donor-control mb-3"
+                                        className="
+                                            form-control
+                                            donor-control
+                                            mb-3
+                                        "
                                         value={
                                             editingDonation.fullName
                                         }
@@ -1961,12 +1967,18 @@ function Depositors() {
 
 
                                     <label className="form-label">
+
                                         Phone
+
                                     </label>
 
                                     <input
                                         name="phone"
-                                        className="form-control donor-control mb-3"
+                                        className="
+                                            form-control
+                                            donor-control
+                                            mb-3
+                                        "
                                         value={
                                             editingDonation.phone
                                         }
@@ -1977,14 +1989,20 @@ function Depositors() {
 
 
                                     <label className="form-label">
+
                                         Amount
+
                                     </label>
 
                                     <input
                                         type="number"
                                         min="1"
                                         name="amount"
-                                        className="form-control donor-control mb-3"
+                                        className="
+                                            form-control
+                                            donor-control
+                                            mb-3
+                                        "
                                         value={
                                             editingDonation.amount
                                         }
@@ -1995,13 +2013,18 @@ function Depositors() {
 
 
                                     <label className="form-label">
+
                                         Donation Date
+
                                     </label>
 
                                     <input
                                         type="date"
                                         name="date"
-                                        className="form-control donor-control"
+                                        className="
+                                            form-control
+                                            donor-control
+                                        "
                                         value={
                                             editingDonation.date
                                         }
@@ -2012,6 +2035,8 @@ function Depositors() {
 
                                 </div>
 
+
+                                {/* FOOTER */}
 
                                 <div className="edit-footer">
 
@@ -2025,7 +2050,9 @@ function Depositors() {
                                             )
                                         }
                                     >
+
                                         Cancel
+
                                     </button>
 
 
@@ -2041,8 +2068,17 @@ function Depositors() {
                                         {saving ? (
 
                                             <>
-                                                <span className="spinner-border spinner-border-sm me-2" />
+
+                                                <span
+                                                    className="
+                                                        spinner-border
+                                                        spinner-border-sm
+                                                        me-2
+                                                    "
+                                                />
+
                                                 Saving...
+
                                             </>
 
                                         ) : (
@@ -2062,6 +2098,10 @@ function Depositors() {
                     )}
 
 
+                    {/* =================================
+                        DELETE CONFIRMATION
+                    ================================= */}
+
                     <ConfirmModal
                         show={
                             manager &&
@@ -2076,10 +2116,14 @@ function Depositors() {
                                 : ""
                         }
                         confirmText="Delete Donation"
-                        loading={deleting}
+                        loading={
+                            deleting
+                        }
                         onCancel={() => {
 
-                            if (!deleting) {
+                            if (
+                                !deleting
+                            ) {
 
                                 setDeleteTarget(
                                     null
@@ -2090,43 +2134,6 @@ function Depositors() {
                         }}
                         onConfirm={
                             deleteDonation
-                        }
-                    />
-
-
-                    <ConfirmModal
-                        show={
-                            manager &&
-                            Boolean(
-                                rejectTarget
-                            )
-                        }
-                        title="Reject Donation?"
-                        message={
-                            rejectTarget
-                                ? `Reject the submitted donation from ${rejectTarget.full_name}? It will not be added to donation records.`
-                                : ""
-                        }
-                        confirmText="Reject Request"
-                        loading={
-                            processingRequestId ===
-                            rejectTarget?.id
-                        }
-                        onCancel={() => {
-
-                            if (
-                                !processingRequestId
-                            ) {
-
-                                setRejectTarget(
-                                    null
-                                );
-
-                            }
-
-                        }}
-                        onConfirm={
-                            rejectRequest
                         }
                     />
 

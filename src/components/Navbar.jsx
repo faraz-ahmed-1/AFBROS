@@ -9,14 +9,21 @@ import {
     FaUsers,
     FaReceipt,
     FaSignOutAlt,
-    FaUserLock
+    FaUserLock,
+    FaClipboardList
 } from "react-icons/fa";
 
 import {
+    useCallback,
+    useEffect,
     useState
 } from "react";
 
-import ConfirmModal from "./ConfirmModal";
+import api
+    from "../api/api";
+
+import ConfirmModal
+    from "./ConfirmModal";
 
 import {
     useToast
@@ -41,11 +48,13 @@ function Navbar() {
     const toast =
         useToast();
 
+
     const manager =
         isFinanceManager();
 
     const guest =
         isGuest();
+
 
     const [
         showLogoutConfirm,
@@ -53,19 +62,126 @@ function Navbar() {
     ] = useState(false);
 
 
+    const [
+        pendingCount,
+        setPendingCount
+    ] = useState(0);
+
+
+    const [
+        mobileOpen,
+        setMobileOpen
+    ] = useState(false);
+
+
+    // ==================================================
+    // REQUEST COUNT
+    // ==================================================
+
+    const fetchPendingCount =
+        useCallback(
+            async () => {
+
+                if (!manager) {
+
+                    setPendingCount(0);
+
+                    return;
+                }
+
+
+                try {
+
+                    const res =
+                        await api.get(
+                            "/donations/requests/count"
+                        );
+
+
+                    setPendingCount(
+                        Number(
+                            res.data?.count ||
+                            0
+                        )
+                    );
+
+                } catch (err) {
+
+                    console.error(
+                        "REQUEST COUNT ERROR:",
+                        err
+                    );
+
+                }
+
+            },
+            [manager]
+        );
+
+
+    useEffect(() => {
+
+        fetchPendingCount();
+
+
+        const update =
+            () =>
+                fetchPendingCount();
+
+
+        window.addEventListener(
+            "focus",
+            update
+        );
+
+
+        window.addEventListener(
+            "afbros-request-count-changed",
+            update
+        );
+
+
+        return () => {
+
+            window.removeEventListener(
+                "focus",
+                update
+            );
+
+            window.removeEventListener(
+                "afbros-request-count-changed",
+                update
+            );
+
+        };
+
+    }, [fetchPendingCount]);
+
+
     const active = (path) =>
         location.pathname === path;
+
+
+    const closeMobile = () => {
+
+        setMobileOpen(false);
+
+    };
 
 
     const logout = () => {
 
         clearAuthentication();
 
-        setShowLogoutConfirm(false);
+        setShowLogoutConfirm(
+            false
+        );
+
 
         toast.success(
             "Logged out successfully."
         );
+
 
         navigate(
             "/login",
@@ -81,6 +197,7 @@ function Navbar() {
 
         leaveGuestMode();
 
+
         navigate(
             "/login",
             {
@@ -91,8 +208,15 @@ function Navbar() {
     };
 
 
+    const displayCount =
+        pendingCount > 99
+            ? "99+"
+            : pendingCount;
+
+
     return (
         <>
+
             <style>
                 {`
                     .afbros-navbar {
@@ -122,22 +246,25 @@ function Navbar() {
                         width: 38px;
                         height: 38px;
                         display: flex;
-                        justify-content: center;
                         align-items: center;
+                        justify-content: center;
                         border-radius: 10px;
-                        background: rgba(255,255,255,.15);
+                        background:
+                            rgba(255,255,255,.15);
                         font-weight: 800;
                     }
 
                     .nav-brand-title {
-                        font-weight: 700;
+                        color: white;
                         font-size: 16px;
+                        font-weight: 700;
                     }
 
                     .nav-brand-subtitle {
                         display: block;
+                        color:
+                            rgba(255,255,255,.65);
                         font-size: 9px;
-                        color: rgba(255,255,255,.65);
                         text-transform: uppercase;
                     }
 
@@ -145,19 +272,34 @@ function Navbar() {
                         display: flex !important;
                         align-items: center;
                         gap: 7px;
+                        padding:
+                            9px 13px !important;
+                        border-radius: 9px;
                         color:
                             rgba(255,255,255,.75)
                             !important;
-                        border-radius: 9px;
-                        padding: 9px 13px !important;
                         font-size: 13px;
                     }
 
-                    .afbros-nav-link.active,
-                    .afbros-nav-link:hover {
+                    .afbros-nav-link:hover,
+                    .afbros-nav-link.active {
                         background:
                             rgba(255,255,255,.14);
                         color: white !important;
+                    }
+
+                    .request-nav-count {
+                        min-width: 21px;
+                        height: 21px;
+                        padding: 0 6px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 20px;
+                        background: white;
+                        color: #198754;
+                        font-size: 10px;
+                        font-weight: 800;
                     }
 
                     .guest-badge {
@@ -174,17 +316,17 @@ function Navbar() {
                     .nav-action-btn {
                         margin-left: 12px;
                         display: flex;
-                        gap: 7px;
                         align-items: center;
+                        gap: 7px;
                         min-height: 38px;
                         padding: 8px 14px;
-                        border-radius: 9px;
                         border:
                             1px solid
                             rgba(255,255,255,.3);
-                        color: white;
+                        border-radius: 9px;
                         background:
                             rgba(255,255,255,.05);
+                        color: white;
                         font-size: 13px;
                         font-weight: 600;
                     }
@@ -192,6 +334,35 @@ function Navbar() {
                     .nav-action-btn:hover {
                         background: white;
                         color: #198754;
+                    }
+
+                    .mobile-toggler-wrap {
+                        position: relative;
+                    }
+
+                    .mobile-pending-badge {
+                        position: absolute;
+                        top: -7px;
+                        right: -8px;
+                        z-index: 5;
+                        min-width: 21px;
+                        height: 21px;
+                        padding: 0 5px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        border-radius: 20px;
+                        background: #dc3545;
+                        color: white;
+                        border: 2px solid #198754;
+                        font-size: 9px;
+                        font-weight: 800;
+                    }
+
+                    @media(min-width:992px) {
+                        .mobile-pending-badge {
+                            display: none;
+                        }
                     }
 
                     @media(max-width:991px) {
@@ -209,6 +380,7 @@ function Navbar() {
                 `}
             </style>
 
+
             <nav className="navbar navbar-expand-lg navbar-dark afbros-navbar">
 
                 <div className="container">
@@ -216,6 +388,7 @@ function Navbar() {
                     <Link
                         className="afbros-navbar-brand"
                         to="/"
+                        onClick={closeMobile}
                     >
 
                         <div className="nav-logo">
@@ -223,6 +396,7 @@ function Navbar() {
                         </div>
 
                         <div>
+
                             <div className="nav-brand-title">
                                 AFBROS Finance
                             </div>
@@ -230,18 +404,42 @@ function Navbar() {
                             <span className="nav-brand-subtitle">
                                 Management System
                             </span>
+
                         </div>
 
                     </Link>
 
-                    <button
-                        className="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#afbrosNavbar"
-                    >
-                        <span className="navbar-toggler-icon" />
-                    </button>
+
+                    <div className="mobile-toggler-wrap">
+
+                        <button
+                            className="navbar-toggler"
+                            type="button"
+                            data-bs-toggle="collapse"
+                            data-bs-target="#afbrosNavbar"
+                            onClick={() =>
+                                setMobileOpen(
+                                    (current) =>
+                                        !current
+                                )
+                            }
+                        >
+                            <span className="navbar-toggler-icon" />
+                        </button>
+
+
+                        {manager &&
+                            pendingCount > 0 &&
+                            !mobileOpen && (
+
+                            <span className="mobile-pending-badge">
+                                {displayCount}
+                            </span>
+
+                        )}
+
+                    </div>
+
 
                     <div
                         className="collapse navbar-collapse"
@@ -250,10 +448,12 @@ function Navbar() {
 
                         <ul className="navbar-nav ms-auto">
 
+
                             <li className="nav-item">
 
                                 <Link
                                     to="/"
+                                    onClick={closeMobile}
                                     className={`nav-link afbros-nav-link ${
                                         active("/")
                                             ? "active"
@@ -266,10 +466,12 @@ function Navbar() {
 
                             </li>
 
+
                             <li className="nav-item">
 
                                 <Link
                                     to="/depositors"
+                                    onClick={closeMobile}
                                     className={`nav-link afbros-nav-link ${
                                         active("/depositors")
                                             ? "active"
@@ -282,10 +484,12 @@ function Navbar() {
 
                             </li>
 
+
                             <li className="nav-item">
 
                                 <Link
                                     to="/expenses"
+                                    onClick={closeMobile}
                                     className={`nav-link afbros-nav-link ${
                                         active("/expenses")
                                             ? "active"
@@ -298,7 +502,38 @@ function Navbar() {
 
                             </li>
 
+
+                            <li className="nav-item">
+
+                                <Link
+                                    to="/requests"
+                                    onClick={closeMobile}
+                                    className={`nav-link afbros-nav-link ${
+                                        active("/requests")
+                                            ? "active"
+                                            : ""
+                                    }`}
+                                >
+
+                                    <FaClipboardList />
+
+                                    Requests
+
+                                    {manager &&
+                                        pendingCount > 0 && (
+
+                                        <span className="request-nav-count">
+                                            {displayCount}
+                                        </span>
+
+                                    )}
+
+                                </Link>
+
+                            </li>
+
                         </ul>
+
 
                         {guest && (
 
@@ -308,9 +543,11 @@ function Navbar() {
 
                         )}
 
+
                         {manager ? (
 
                             <button
+                                type="button"
                                 className="nav-action-btn"
                                 onClick={() =>
                                     setShowLogoutConfirm(
@@ -325,6 +562,7 @@ function Navbar() {
                         ) : (
 
                             <button
+                                type="button"
                                 className="nav-action-btn"
                                 onClick={managerLogin}
                             >
@@ -340,8 +578,11 @@ function Navbar() {
 
             </nav>
 
+
             <ConfirmModal
-                show={showLogoutConfirm}
+                show={
+                    showLogoutConfirm
+                }
                 title="Logout?"
                 message="Are you sure you want to logout from your AFBROS finance account?"
                 confirmText="Logout"
@@ -356,6 +597,8 @@ function Navbar() {
 
         </>
     );
+
 }
+
 
 export default Navbar;
