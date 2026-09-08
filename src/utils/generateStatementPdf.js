@@ -1,11 +1,12 @@
-import jsPDF from "jspdf";
+import jsPDF
+    from "jspdf";
 
 import autoTable
     from "jspdf-autotable";
 
 
 // ======================================================
-// MONEY FORMAT
+// MONEY
 // ======================================================
 
 const money = (value) => {
@@ -24,57 +25,484 @@ const money = (value) => {
 
 
 // ======================================================
-// DATE FORMAT
+// DATE
 // ======================================================
 
 const prettyDate = (value) => {
 
     if (!value) {
+
         return "";
+
     }
+
+
+    const datePart =
+        String(value)
+            .substring(
+                0,
+                10
+            );
 
 
     const [
         year,
         month,
         day
-    ] = value.split("-");
+    ] = datePart.split("-");
 
 
-    return `${day}/${month}/${year}`;
+    return (
+        `${day}/${month}/${year}`
+    );
 
 };
 
 
 // ======================================================
-// TYPE TITLE
+// STATEMENT TITLE
 // ======================================================
 
 const getStatementTitle = (
     type
 ) => {
 
-    if (type === "in") {
+    if (
+        type === "in"
+    ) {
 
-        return "Donation / IN Statement";
-
-    }
-
-
-    if (type === "out") {
-
-        return "Expense / OUT Statement";
+        return "Donation Statement";
 
     }
 
 
-    return "Complete IN / OUT Statement";
+    if (
+        type === "out"
+    ) {
+
+        return "Expenses Statement";
+
+    }
+
+
+    return "Complete Statement";
 
 };
 
 
 // ======================================================
-// GENERATE PDF
+// FILE NAME
+// ======================================================
+
+const getFileName = (
+    type
+) => {
+
+    if (
+        type === "in"
+    ) {
+
+        return "Donation_Statement";
+
+    }
+
+
+    if (
+        type === "out"
+    ) {
+
+        return "Expenses_Statement";
+
+    }
+
+
+    return "Complete_Statement";
+
+};
+
+
+// ======================================================
+// DRAW PAGE TOTALS
+// ======================================================
+
+const drawPageTotals = (
+    doc,
+    table,
+    pageTotal
+) => {
+
+    if (
+        !table ||
+        !pageTotal
+    ) {
+
+        return;
+
+    }
+
+
+    const pageHeight =
+        doc.internal
+            .pageSize
+            .getHeight();
+
+
+    const columns =
+        table.columns;
+
+
+    const detailsColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "details"
+        );
+
+
+    const creditColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "credit"
+        );
+
+
+    const debitColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "debit"
+        );
+
+
+    const balanceColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "balance"
+        );
+
+
+    if (
+        !creditColumn ||
+        !debitColumn ||
+        !balanceColumn
+    ) {
+
+        return;
+
+    }
+
+
+    const y =
+        pageHeight - 20;
+
+
+    doc.setDrawColor(
+        210,
+        218,
+        213
+    );
+
+
+    doc.line(
+        creditColumn.x,
+        y - 4,
+        balanceColumn.x +
+            balanceColumn.width,
+        y - 4
+    );
+
+
+    doc.setFont(
+        "helvetica",
+        "bold"
+    );
+
+
+    doc.setFontSize(
+        8
+    );
+
+
+    if (
+        detailsColumn
+    ) {
+
+        doc.text(
+            "Page Total",
+            detailsColumn.x +
+                detailsColumn.width -
+                2,
+            y,
+            {
+                align: "right"
+            }
+        );
+
+    }
+
+
+    doc.text(
+        money(
+            pageTotal.credit
+        ),
+        creditColumn.x +
+            creditColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+
+    doc.text(
+        money(
+            pageTotal.debit
+        ),
+        debitColumn.x +
+            debitColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+
+    doc.text(
+        money(
+            pageTotal.balance
+        ),
+        balanceColumn.x +
+            balanceColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+};
+
+
+// ======================================================
+// DRAW GRAND TOTAL ON FINAL PAGE
+// ======================================================
+
+const drawGrandTotal = (
+    doc,
+    table,
+    totals
+) => {
+
+    if (!table) {
+
+        return;
+
+    }
+
+
+    const pageHeight =
+        doc.internal
+            .pageSize
+            .getHeight();
+
+
+    const columns =
+        table.columns;
+
+
+    const detailsColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "details"
+        );
+
+
+    const creditColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "credit"
+        );
+
+
+    const debitColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "debit"
+        );
+
+
+    const balanceColumn =
+        columns.find(
+            (column) =>
+                column.dataKey ===
+                "balance"
+        );
+
+
+    if (
+        !creditColumn ||
+        !debitColumn ||
+        !balanceColumn
+    ) {
+
+        return;
+
+    }
+
+
+    const y =
+        pageHeight - 13;
+
+
+    doc.setDrawColor(
+        170,
+        183,
+        176
+    );
+
+
+    doc.line(
+        creditColumn.x,
+        y - 4,
+        balanceColumn.x +
+            balanceColumn.width,
+        y - 4
+    );
+
+
+    doc.setFont(
+        "helvetica",
+        "bold"
+    );
+
+
+    doc.setFontSize(
+        8.5
+    );
+
+
+    if (
+        detailsColumn
+    ) {
+
+        doc.text(
+            "Grand Total",
+            detailsColumn.x +
+                detailsColumn.width -
+                2,
+            y,
+            {
+                align: "right"
+            }
+        );
+
+    }
+
+
+    doc.text(
+        money(
+            totals.credit
+        ),
+        creditColumn.x +
+            creditColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+
+    doc.text(
+        money(
+            totals.debit
+        ),
+        debitColumn.x +
+            debitColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+
+    doc.text(
+        money(
+            totals.balance
+        ),
+        balanceColumn.x +
+            balanceColumn.width -
+            2,
+        y,
+        {
+            align: "right"
+        }
+    );
+
+};
+
+
+// ======================================================
+// FOOTER
+// ======================================================
+
+const addFooter = (
+    doc,
+    pageNumber
+) => {
+
+    const pageWidth =
+        doc.internal
+            .pageSize
+            .getWidth();
+
+
+    const pageHeight =
+        doc.internal
+            .pageSize
+            .getHeight();
+
+
+    doc.setFont(
+        "helvetica",
+        "normal"
+    );
+
+
+    doc.setFontSize(
+        7.5
+    );
+
+
+    doc.text(
+        "AFBROS Finance System",
+        14,
+        pageHeight - 6
+    );
+
+
+    doc.text(
+        `Page ${pageNumber}`,
+        pageWidth - 14,
+        pageHeight - 6,
+        {
+            align: "right"
+        }
+    );
+
+};
+
+
+// ======================================================
+// PDF GENERATOR
 // ======================================================
 
 const generateStatementPdf = (
@@ -93,9 +521,7 @@ const generateStatementPdf = (
         new jsPDF({
 
             orientation:
-                type === "all"
-                    ? "landscape"
-                    : "portrait",
+                "landscape",
 
             unit:
                 "mm",
@@ -115,23 +541,30 @@ const generateStatementPdf = (
         "bold"
     );
 
-    doc.setFontSize(19);
+
+    doc.setFontSize(
+        19
+    );
+
 
     doc.text(
         "AFBROS Finance System",
         14,
-        16
+        15
     );
 
 
-    doc.setFontSize(14);
+    doc.setFontSize(
+        14
+    );
+
 
     doc.text(
         getStatementTitle(
             type
         ),
         14,
-        24
+        23
     );
 
 
@@ -140,12 +573,15 @@ const generateStatementPdf = (
         "normal"
     );
 
-    doc.setFontSize(9);
+
+    doc.setFontSize(
+        9
+    );
 
 
     const rangeText =
         range.complete
-            ? "Complete Statement: Beginning of records to today"
+            ? "Statement Period: Beginning of records to today"
             : `Statement Period: ${prettyDate(
                 range.from
             )} to ${prettyDate(
@@ -156,409 +592,516 @@ const generateStatementPdf = (
     doc.text(
         rangeText,
         14,
-        31
+        30
     );
-
-
-    const generatedAt =
-        new Date()
-            .toLocaleString();
 
 
     doc.text(
-        `Generated: ${generatedAt}`,
+        `Generated: ${new Date().toLocaleString()}`,
         14,
-        36
+        35
     );
 
 
     // ==================================================
-    // SUMMARY
+    // BUILD TRANSACTIONS
     // ==================================================
 
-    let summaryY = 44;
+    let runningBalance =
+        0;
 
 
-    if (
-        type === "all"
-    ) {
+    const body =
+        records.map(
+            (record) => {
 
-        doc.setFont(
-            "helvetica",
-            "bold"
-        );
-
-
-        doc.text(
-            `Total IN: Rs. ${money(
-                totals.totalIn
-            )}`,
-            14,
-            summaryY
-        );
+                const amount =
+                    Number(
+                        record.amount ||
+                        0
+                    );
 
 
-        doc.text(
-            `Total OUT: Rs. ${money(
-                totals.totalOut
-            )}`,
-            75,
-            summaryY
-        );
+                const isCredit =
+                    record.transaction_type ===
+                    "IN";
 
 
-        doc.text(
-            `Net Balance: Rs. ${money(
-                totals.balance
-            )}`,
-            140,
-            summaryY
-        );
-
-    }
+                const credit =
+                    isCredit
+                        ? amount
+                        : 0;
 
 
-    if (
-        type === "in"
-    ) {
-
-        doc.setFont(
-            "helvetica",
-            "bold"
-        );
+                const debit =
+                    isCredit
+                        ? 0
+                        : amount;
 
 
-        doc.text(
-            `Total Donations: Rs. ${money(
-                totals.totalIn
-            )}`,
-            14,
-            summaryY
-        );
-
-    }
+                runningBalance +=
+                    credit -
+                    debit;
 
 
-    if (
-        type === "out"
-    ) {
+                return {
 
-        doc.setFont(
-            "helvetica",
-            "bold"
-        );
-
-
-        doc.text(
-            `Total Expenses: Rs. ${money(
-                totals.totalOut
-            )}`,
-            14,
-            summaryY
-        );
-
-    }
-
-
-    // ==================================================
-    // COMPLETE IN / OUT TABLE
-    // ==================================================
-
-    if (
-        type === "all"
-    ) {
-
-        let runningBalance =
-            0;
-
-
-        const rows =
-            records.map(
-                (record) => {
-
-                    const amount =
-                        Number(
-                            record.amount
-                        );
-
-
-                    if (
-                        record.transaction_type ===
-                        "IN"
-                    ) {
-
-                        runningBalance +=
-                            amount;
-
-                    } else {
-
-                        runningBalance -=
-                            amount;
-
-                    }
-
-
-                    return [
-
+                    date:
                         prettyDate(
                             record.record_date
                         ),
 
-                        record.transaction_type,
+                    name:
+                        record.full_name ||
+                        "—",
 
-                        record.full_name,
+                    details:
+                        record.details ||
+                        "—",
 
-                        record.details || "—",
-
-                        record.transaction_type ===
-                        "IN"
-                            ? money(amount)
+                    credit:
+                        credit
+                            ? money(
+                                credit
+                            )
                             : "—",
 
-                        record.transaction_type ===
-                        "OUT"
-                            ? money(amount)
+                    debit:
+                        debit
+                            ? money(
+                                debit
+                            )
                             : "—",
 
+                    balance:
                         money(
                             runningBalance
-                        )
-
-                    ];
-
-                }
-            );
+                        ),
 
 
-        autoTable(
-            doc,
-            {
+                    // Hidden numeric values
+                    // used only for page totals.
 
-                startY:
-                    50,
+                    __credit:
+                        credit,
 
-                head: [[
-                    "Date",
-                    "Type",
-                    "Name",
-                    "Phone / Description",
-                    "IN (Rs.)",
-                    "OUT (Rs.)",
-                    "Balance (Rs.)"
-                ]],
+                    __debit:
+                        debit
 
-                body:
-                    rows.length
-                        ? rows
-                        : [[
-                            "No records found",
-                            "",
-                            "",
-                            "",
-                            "",
-                            "",
-                            ""
-                        ]],
-
-                styles: {
-                    fontSize: 8,
-                    cellPadding: 2.5
-                },
-
-                headStyles: {
-                    fontStyle: "bold"
-                },
-
-                didDrawPage: (
-                    data
-                ) => {
-
-                    addFooter(
-                        doc,
-                        data.pageNumber
-                    );
-
-                }
+                };
 
             }
         );
 
-    }
-
 
     // ==================================================
-    // IN STATEMENT
+    // PAGE TOTAL TRACKING
     // ==================================================
 
-    if (
-        type === "in"
-    ) {
-
-        const rows =
-            records.map(
-                (record) => [
-
-                    prettyDate(
-                        record.record_date
-                    ),
-
-                    record.full_name,
-
-                    record.details || "—",
-
-                    `Rs. ${money(
-                        record.amount
-                    )}`
-
-                ]
-            );
+    const pageTotals =
+        {};
 
 
-        autoTable(
-            doc,
-            {
+    autoTable(
+        doc,
+        {
 
-                startY:
-                    50,
+            startY:
+                42,
 
-                head: [[
-                    "Date",
-                    "Donor Name",
-                    "Phone",
-                    "Amount"
-                ]],
 
-                body:
-                    rows.length
-                        ? rows
-                        : [[
-                            "No records found",
-                            "",
-                            "",
-                            ""
-                        ]],
+            margin: {
 
-                styles: {
-                    fontSize: 9,
-                    cellPadding: 3
+                top:
+                    15,
+
+                left:
+                    14,
+
+                right:
+                    14,
+
+                bottom:
+                    28
+
+            },
+
+
+            columns: [
+
+                {
+                    header:
+                        "Date",
+
+                    dataKey:
+                        "date"
                 },
 
-                headStyles: {
-                    fontStyle: "bold"
+                {
+                    header:
+                        "Name",
+
+                    dataKey:
+                        "name"
                 },
 
-                didDrawPage: (
-                    data
-                ) => {
+                {
+                    header:
+                        type === "in"
+                            ? "Phone"
+                            : type === "out"
+                                ? "Description"
+                                : "Details",
 
-                    addFooter(
-                        doc,
-                        data.pageNumber
-                    );
+                    dataKey:
+                        "details"
+                },
+
+                {
+                    header:
+                        "Credit",
+
+                    dataKey:
+                        "credit"
+                },
+
+                {
+                    header:
+                        "Debit",
+
+                    dataKey:
+                        "debit"
+                },
+
+                {
+                    header:
+                        "Balance",
+
+                    dataKey:
+                        "balance"
+                }
+
+            ],
+
+
+            body:
+                body.length
+                    ? body
+                    : [
+
+                        {
+
+                            date:
+                                "No records found",
+
+                            name:
+                                "",
+
+                            details:
+                                "",
+
+                            credit:
+                                "",
+
+                            debit:
+                                "",
+
+                            balance:
+                                "",
+
+                            __credit:
+                                0,
+
+                            __debit:
+                                0
+
+                        }
+
+                    ],
+
+
+            styles: {
+
+                fontSize:
+                    8.5,
+
+                cellPadding:
+                    2.8,
+
+                lineColor:
+                    [229, 235, 231],
+
+                lineWidth:
+                    .15
+
+            },
+
+
+            headStyles: {
+
+                fontStyle:
+                    "bold",
+
+                halign:
+                    "left"
+
+            },
+
+
+            columnStyles: {
+
+                date: {
+
+                    cellWidth:
+                        28
+
+                },
+
+                name: {
+
+                    cellWidth:
+                        52
+
+                },
+
+                details: {
+
+                    cellWidth:
+                        "auto"
+
+                },
+
+                credit: {
+
+                    cellWidth:
+                        32,
+
+                    halign:
+                        "right"
+
+                },
+
+                debit: {
+
+                    cellWidth:
+                        32,
+
+                    halign:
+                        "right"
+
+                },
+
+                balance: {
+
+                    cellWidth:
+                        35,
+
+                    halign:
+                        "right"
 
                 }
 
-            }
-        );
-
-    }
+            },
 
 
-    // ==================================================
-    // OUT STATEMENT
-    // ==================================================
+            // ==========================================
+            // CALCULATE TOTAL OF RECORDS
+            // ACTUALLY PRINTED ON EACH PAGE
+            // ==========================================
 
-    if (
-        type === "out"
-    ) {
+            didDrawCell: (
+                data
+            ) => {
 
-        const rows =
-            records.map(
-                (record) => [
+                if (
+                    data.section !==
+                    "body"
+                ) {
 
-                    prettyDate(
-                        record.record_date
-                    ),
-
-                    record.full_name,
-
-                    record.details || "—",
-
-                    `Rs. ${money(
-                        record.amount
-                    )}`
-
-                ]
-            );
-
-
-        autoTable(
-            doc,
-            {
-
-                startY:
-                    50,
-
-                head: [[
-                    "Date",
-                    "Name",
-                    "Description",
-                    "Amount"
-                ]],
-
-                body:
-                    rows.length
-                        ? rows
-                        : [[
-                            "No records found",
-                            "",
-                            "",
-                            ""
-                        ]],
-
-                styles: {
-                    fontSize: 9,
-                    cellPadding: 3
-                },
-
-                headStyles: {
-                    fontStyle: "bold"
-                },
-
-                didDrawPage: (
-                    data
-                ) => {
-
-                    addFooter(
-                        doc,
-                        data.pageNumber
-                    );
+                    return;
 
                 }
 
-            }
-        );
 
-    }
+                /*
+                    Process once per row.
+                    Balance column is used so the
+                    same row is not counted 6 times.
+                */
+
+                if (
+                    data.column.dataKey !==
+                    "balance"
+                ) {
+
+                    return;
+
+                }
+
+
+                const pageNumber =
+                    doc.internal
+                        .getCurrentPageInfo()
+                        .pageNumber;
+
+
+                if (
+                    !pageTotals[
+                        pageNumber
+                    ]
+                ) {
+
+                    pageTotals[
+                        pageNumber
+                    ] = {
+
+                        credit:
+                            0,
+
+                        debit:
+                            0,
+
+                        balance:
+                            0
+
+                    };
+
+                }
+
+
+                const row =
+                    data.row.raw;
+
+
+                pageTotals[
+                    pageNumber
+                ].credit +=
+                    Number(
+                        row.__credit ||
+                        0
+                    );
+
+
+                pageTotals[
+                    pageNumber
+                ].debit +=
+                    Number(
+                        row.__debit ||
+                        0
+                    );
+
+
+                pageTotals[
+                    pageNumber
+                ].balance =
+                    pageTotals[
+                        pageNumber
+                    ].credit -
+                    pageTotals[
+                        pageNumber
+                    ].debit;
+
+            },
+
+
+            // ==========================================
+            // EACH PAGE TOTAL
+            // ==========================================
+
+            didDrawPage: (
+                data
+            ) => {
+
+                const pageNumber =
+                    doc.internal
+                        .getCurrentPageInfo()
+                        .pageNumber;
+
+
+                const pageTotal =
+                    pageTotals[
+                        pageNumber
+                    ] || {
+
+                        credit:
+                            0,
+
+                        debit:
+                            0,
+
+                        balance:
+                            0
+
+                    };
+
+
+                drawPageTotals(
+                    doc,
+                    data.table,
+                    pageTotal
+                );
+
+
+                addFooter(
+                    doc,
+                    pageNumber
+                );
+
+            }
+
+        }
+    );
+
+
+    // ==================================================
+    // GRAND TOTAL
+    // ONLY ON FINAL PDF PAGE
+    // ==================================================
+
+    const totalPages =
+        doc.internal
+            .getNumberOfPages();
+
+
+    doc.setPage(
+        totalPages
+    );
+
+
+    drawGrandTotal(
+        doc,
+        doc.lastAutoTable,
+        {
+
+            credit:
+                Number(
+                    totals.totalIn ||
+                    0
+                ),
+
+            debit:
+                Number(
+                    totals.totalOut ||
+                    0
+                ),
+
+            balance:
+                Number(
+                    totals.totalIn ||
+                    0
+                ) -
+                Number(
+                    totals.totalOut ||
+                    0
+                )
+
+        }
+    );
 
 
     // ==================================================
     // FILE NAME
     // ==================================================
-
-    const reportName = {
-
-        all:
-            "Complete_Statement",
-
-        in:
-            "Donation_Statement",
-
-        out:
-            "Expense_Statement"
-
-    }[type];
-
 
     const rangeName =
         range.complete
@@ -567,47 +1110,9 @@ const generateStatementPdf = (
 
 
     doc.save(
-        `AFBROS_${reportName}_${rangeName}.pdf`
-    );
-
-};
-
-
-// ======================================================
-// FOOTER
-// ======================================================
-
-const addFooter = (
-    doc,
-    pageNumber
-) => {
-
-    const pageHeight =
-        doc.internal.pageSize.height;
-
-
-    doc.setFont(
-        "helvetica",
-        "normal"
-    );
-
-
-    doc.setFontSize(
-        8
-    );
-
-
-    doc.text(
-        "AFBROS Finance System",
-        14,
-        pageHeight - 8
-    );
-
-
-    doc.text(
-        `Page ${pageNumber}`,
-        doc.internal.pageSize.width - 28,
-        pageHeight - 8
+        `AFBROS_${getFileName(
+            type
+        )}_${rangeName}.pdf`
     );
 
 };
