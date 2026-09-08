@@ -6,13 +6,26 @@ import {
     Routes
 } from "react-router-dom";
 
-import Navbar from "./components/Navbar";
-import AccessRoute from "./components/AccessRoute";
+import Navbar
+    from "./components/Navbar";
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Depositors from "./pages/Depositors";
-import Expenses from "./pages/Expenses";
+import AccessRoute
+    from "./components/AccessRoute";
+
+import PdfReportButton
+    from "./components/PdfReportButton";
+
+import Home
+    from "./pages/Home";
+
+import Login
+    from "./pages/Login";
+
+import Depositors
+    from "./pages/Depositors";
+
+import Expenses
+    from "./pages/Expenses";
 
 import {
     hasSiteAccess
@@ -23,8 +36,13 @@ function AppLayout() {
 
     return (
         <>
+
             <Navbar />
+
+            <PdfReportButton />
+
             <Outlet />
+
         </>
     );
 
@@ -39,10 +57,15 @@ function App() {
 
             <Routes>
 
+                {/* LOGIN */}
+
                 <Route
                     path="/login"
                     element={<Login />}
                 />
+
+
+                {/* MANAGER / GUEST ACCESS */}
 
                 <Route
                     element={<AccessRoute />}
@@ -57,10 +80,12 @@ function App() {
                             element={<Home />}
                         />
 
+
                         <Route
                             path="/depositors"
                             element={<Depositors />}
                         />
+
 
                         <Route
                             path="/expenses"
@@ -70,6 +95,9 @@ function App() {
                     </Route>
 
                 </Route>
+
+
+                {/* FALLBACK */}
 
                 <Route
                     path="*"
