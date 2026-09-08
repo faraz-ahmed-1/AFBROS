@@ -24,6 +24,9 @@ import {
 import generateStatementPdf
     from "../utils/generateStatementPdf";
 
+import {
+    isFinanceManager
+} from "../utils/auth";
 
 function PdfReportButton() {
 
@@ -32,6 +35,9 @@ function PdfReportButton() {
 
     const toast =
         useToast();
+
+    const manager =
+    isFinanceManager();
 
 
     // ==================================================
@@ -123,10 +129,11 @@ function PdfReportButton() {
     // No PDF button on requests
     // or any other page.
 
-    if (!reportType) {
-
+    if (
+        !manager ||
+        !reportType
+    ) {
         return null;
-
     }
 
 
