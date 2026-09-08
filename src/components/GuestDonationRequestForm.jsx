@@ -5,10 +5,17 @@ import {
 
 import {
     FaPaperPlane,
+    FaUser,
+    FaPhone,
+    FaEnvelope,
+    FaUniversity,
+    FaMoneyBillWave,
+    FaCalendarAlt,
     FaShieldAlt
 } from "react-icons/fa";
 
-import api from "../api/api";
+import api
+    from "../api/api";
 
 import {
     useToast
@@ -32,17 +39,23 @@ function GuestDonationRequestForm() {
         setForm
     ] = useState({
 
-        fullName: "",
+        fullName:
+            "",
 
-        phone: "",
+        phone:
+            "",
 
-        trxId: "",
+        email:
+            "",
 
-        amount: "",
+        accountTitle:
+            "",
 
-        transactionDate: "",
+        amount:
+            "",
 
-        transactionTime: ""
+        transactionDate:
+            ""
 
     });
 
@@ -60,18 +73,28 @@ function GuestDonationRequestForm() {
 
 
     // ==================================================
-    // INPUT
+    // CHANGE
     // ==================================================
 
-    const handleChange = (e) => {
+    const handleChange = (
+        e
+    ) => {
+
+        const {
+            name,
+            value
+        } = e.target;
+
 
         setForm(
-            (current) => ({
+            (
+                current
+            ) => ({
 
                 ...current,
 
-                [e.target.name]:
-                    e.target.value
+                [name]:
+                    value
 
             })
         );
@@ -86,14 +109,18 @@ function GuestDonationRequestForm() {
     useEffect(() => {
 
         const search =
-            form.fullName.trim();
+            form.fullName
+                .trim();
 
 
         if (!search) {
 
-            setNameSuggestions([]);
+            setNameSuggestions(
+                []
+            );
 
             return;
+
         }
 
 
@@ -115,10 +142,13 @@ function GuestDonationRequestForm() {
 
 
                         const query =
-                            search.toLowerCase();
+                            search
+                                .toLowerCase();
 
 
-                        const unique = [];
+                        const names =
+                            [];
+
 
                         const seen =
                             new Set();
@@ -126,43 +156,76 @@ function GuestDonationRequestForm() {
 
                         for (
                             const donation
-                            of res.data || []
+                            of res.data ||
+                            []
                         ) {
 
                             const name =
-                                donation.full_name
+                                donation
+                                    .full_name
                                     ?.trim();
 
 
-                            if (
-                                !name ||
-                                seen.has(name) ||
-                                !name
-                                    .toLowerCase()
-                                    .includes(query)
-                            ) {
+                            if (!name) {
+
                                 continue;
+
                             }
 
 
-                            seen.add(name);
-
-                            unique.push(name);
+                            const lowerName =
+                                name
+                                    .toLowerCase();
 
 
                             if (
-                                unique.length >=
+                                !lowerName.includes(
+                                    query
+                                )
+                            ) {
+
+                                continue;
+
+                            }
+
+
+                            if (
+                                seen.has(
+                                    lowerName
+                                )
+                            ) {
+
+                                continue;
+
+                            }
+
+
+                            seen.add(
+                                lowerName
+                            );
+
+
+                            names.push(
+                                name
+                            );
+
+
+                            if (
+                                names.length >=
                                 6
                             ) {
+
                                 break;
+
                             }
 
                         }
 
 
                         setNameSuggestions(
-                            unique
+                            names
                         );
+
 
                     } catch {
 
@@ -178,9 +241,13 @@ function GuestDonationRequestForm() {
 
 
         return () =>
-            clearTimeout(timer);
+            clearTimeout(
+                timer
+            );
 
-    }, [form.fullName]);
+    }, [
+        form.fullName
+    ]);
 
 
     // ==================================================
@@ -190,14 +257,18 @@ function GuestDonationRequestForm() {
     useEffect(() => {
 
         const search =
-            form.phone.trim();
+            form.phone
+                .trim();
 
 
         if (!search) {
 
-            setPhoneSuggestions([]);
+            setPhoneSuggestions(
+                []
+            );
 
             return;
+
         }
 
 
@@ -218,7 +289,9 @@ function GuestDonationRequestForm() {
                             );
 
 
-                        const unique = [];
+                        const phones =
+                            [];
+
 
                         const seen =
                             new Set();
@@ -226,43 +299,65 @@ function GuestDonationRequestForm() {
 
                         for (
                             const donation
-                            of res.data || []
+                            of res.data ||
+                            []
                         ) {
 
                             const phone =
-                                donation.phone
+                                donation
+                                    .phone
                                     ?.trim();
 
 
                             if (
                                 !phone ||
-                                seen.has(phone) ||
                                 !phone.includes(
                                     search
                                 )
                             ) {
+
                                 continue;
+
                             }
 
 
-                            seen.add(phone);
+                            if (
+                                seen.has(
+                                    phone
+                                )
+                            ) {
 
-                            unique.push(phone);
+                                continue;
+
+                            }
+
+
+                            seen.add(
+                                phone
+                            );
+
+
+                            phones.push(
+                                phone
+                            );
 
 
                             if (
-                                unique.length >=
+                                phones.length >=
                                 6
                             ) {
+
                                 break;
+
                             }
 
                         }
 
 
                         setPhoneSuggestions(
-                            unique
+                            phones
                         );
+
 
                     } catch {
 
@@ -278,9 +373,13 @@ function GuestDonationRequestForm() {
 
 
         return () =>
-            clearTimeout(timer);
+            clearTimeout(
+                timer
+            );
 
-    }, [form.phone]);
+    }, [
+        form.phone
+    ]);
 
 
     // ==================================================
@@ -288,7 +387,9 @@ function GuestDonationRequestForm() {
     // ==================================================
 
     const handleSubmit =
-        async (e) => {
+        async (
+            e
+        ) => {
 
             e.preventDefault();
 
@@ -296,13 +397,20 @@ function GuestDonationRequestForm() {
             const payload = {
 
                 fullName:
-                    form.fullName.trim(),
+                    form.fullName
+                        .trim(),
 
                 phone:
-                    form.phone.trim(),
+                    form.phone
+                        .trim(),
 
-                trxId:
-                    form.trxId.trim(),
+                email:
+                    form.email
+                        .trim(),
+
+                accountTitle:
+                    form.accountTitle
+                        .trim(),
 
                 amount:
                     Number(
@@ -310,10 +418,7 @@ function GuestDonationRequestForm() {
                     ),
 
                 transactionDate:
-                    form.transactionDate,
-
-                transactionTime:
-                    form.transactionTime
+                    form.transactionDate
 
             };
 
@@ -321,16 +426,17 @@ function GuestDonationRequestForm() {
             if (
                 !payload.fullName ||
                 !payload.phone ||
-                !payload.trxId ||
-                !payload.transactionDate ||
-                !payload.transactionTime
+                !payload.email ||
+                !payload.accountTitle ||
+                !payload.transactionDate
             ) {
 
                 toast.warning(
-                    "Please complete all transaction details."
+                    "Please complete all donation request fields."
                 );
 
                 return;
+
             }
 
 
@@ -346,12 +452,15 @@ function GuestDonationRequestForm() {
                 );
 
                 return;
+
             }
 
 
             try {
 
-                setLoading(true);
+                setLoading(
+                    true
+                );
 
 
                 const res =
@@ -363,53 +472,63 @@ function GuestDonationRequestForm() {
 
                 toast.success(
                     res.data?.message ||
-                    "Donation submitted for verification."
+                    "Donation request submitted."
                 );
 
 
                 setForm({
 
-                    fullName: "",
+                    fullName:
+                        "",
 
-                    phone: "",
+                    phone:
+                        "",
 
-                    trxId: "",
+                    email:
+                        "",
 
-                    amount: "",
+                    accountTitle:
+                        "",
 
-                    transactionDate: "",
+                    amount:
+                        "",
 
-                    transactionTime: ""
+                    transactionDate:
+                        ""
 
                 });
 
 
-                setNameSuggestions([]);
-
-                setPhoneSuggestions([]);
-
-
-                window.dispatchEvent(
-                    new Event(
-                        "afbros-request-count-changed"
-                    )
+                setNameSuggestions(
+                    []
                 );
 
 
-            } catch (err) {
+                setPhoneSuggestions(
+                    []
+                );
+
+
+            } catch (
+                err
+            ) {
 
                 console.error(err);
 
 
                 toast.error(
-                    err.response?.data?.message ||
+                    err.response
+                        ?.data
+                        ?.message ||
                     "Unable to submit donation request."
                 );
 
 
             } finally {
 
-                setLoading(false);
+                setLoading(
+                    false
+                );
 
             }
 
@@ -421,59 +540,24 @@ function GuestDonationRequestForm() {
 
             <style>
                 {`
-                    .request-form-card {
+                    .donation-request-card {
                         background: white;
-                        border: 1px solid #dfe8e3;
+                        border: 1px solid #e6ebe8;
                         border-radius: 18px;
-                        overflow: visible;
                         box-shadow:
-                            0 7px 25px
-                            rgba(28,60,42,.05);
+                            0 6px 22px
+                            rgba(30,55,40,.05);
+                        overflow: visible;
                     }
 
-                    .request-form-header {
-                        padding: 22px 25px;
-                        display: flex;
-                        align-items: center;
-                        gap: 13px;
-                        background:
-                            linear-gradient(
-                                135deg,
-                                #f3faf6,
-                                white
-                            );
+                    .donation-request-header {
+                        padding: 22px 24px;
                         border-bottom:
                             1px solid #edf2ef;
-                        border-radius:
-                            18px 18px 0 0;
                     }
 
-                    .request-form-icon {
-                        width: 44px;
-                        height: 44px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        border-radius: 12px;
-                        background: #eaf7f0;
-                        color: #198754;
-                    }
-
-                    .request-form-title {
-                        margin: 0;
-                        color: #26372e;
-                        font-size: 18px;
-                        font-weight: 700;
-                    }
-
-                    .request-form-subtitle {
-                        margin: 4px 0 0;
-                        color: #85918a;
-                        font-size: 12px;
-                    }
-
-                    .request-form-body {
-                        padding: 25px;
+                    .donation-request-body {
+                        padding: 24px;
                     }
 
                     .request-control {
@@ -494,11 +578,11 @@ function GuestDonationRequestForm() {
                             !important;
                     }
 
-                    .suggestion-wrapper {
+                    .request-suggestion-wrap {
                         position: relative;
                     }
 
-                    .suggestion-menu {
+                    .request-suggestions {
                         position: absolute;
                         top: calc(100% + 5px);
                         left: 0;
@@ -508,75 +592,59 @@ function GuestDonationRequestForm() {
                         overflow-y: auto;
                         background: white;
                         border:
-                            1px solid #dde7e1;
+                            1px solid #dfe7e2;
                         border-radius: 10px;
                         box-shadow:
                             0 12px 30px
                             rgba(25,48,35,.13);
                     }
 
-                    .suggestion-item {
+                    .request-suggestion {
                         width: 100%;
                         padding: 11px 13px;
                         border: none;
                         border-bottom:
-                            1px solid #f0f3f1;
+                            1px solid #eff3f0;
                         background: white;
                         text-align: left;
                         color: #34453c;
                         font-size: 13px;
                     }
 
-                    .suggestion-item:hover {
+                    .request-suggestion:hover {
                         background: #f2faf5;
                         color: #198754;
                     }
 
-                    .suggestion-item:last-child {
+                    .request-suggestion:last-child {
                         border-bottom: none;
-                    }
-
-                    .request-security-note {
-                        display: flex;
-                        align-items: center;
-                        gap: 8px;
-                        margin-top: 17px;
-                        padding: 11px 13px;
-                        border-radius: 9px;
-                        background: #f6f9f7;
-                        color: #738078;
-                        font-size: 11px;
                     }
                 `}
             </style>
 
 
-            <div className="request-form-card">
+            <div className="donation-request-card">
 
-                <div className="request-form-header">
+                <div className="donation-request-header">
 
-                    <div className="request-form-icon">
-                        <FaPaperPlane />
-                    </div>
+                    <h4 className="fw-bold mb-1">
+                        Submit Donation Request
+                    </h4>
 
-                    <div>
-
-                        <h3 className="request-form-title">
-                            Submit Donation Request
-                        </h3>
-
-                        <p className="request-form-subtitle">
-                            Submit transaction details for Finance Manager verification.
-                        </p>
-
-                    </div>
+                    <small className="text-muted">
+                        Submit transaction details for Finance Manager verification.
+                    </small>
 
                 </div>
 
 
-                <div className="request-form-body">
+                <div className="donation-request-body">
 
-                    <form onSubmit={handleSubmit}>
+                    <form
+                        onSubmit={
+                            handleSubmit
+                        }
+                    >
 
                         <div className="row g-3">
 
@@ -586,41 +654,57 @@ function GuestDonationRequestForm() {
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
+
+                                    <FaUser className="me-2" />
+
                                     Full Name
+
                                 </label>
 
-                                <div className="suggestion-wrapper">
+
+                                <div className="request-suggestion-wrap">
 
                                     <input
                                         name="fullName"
                                         autoComplete="off"
                                         className="form-control request-control"
                                         placeholder="Enter full name"
-                                        value={form.fullName}
-                                        onChange={handleChange}
+                                        value={
+                                            form.fullName
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                     />
 
 
                                     {nameSuggestions.length > 0 && (
 
-                                        <div className="suggestion-menu">
+                                        <div className="request-suggestions">
 
                                             {nameSuggestions.map(
-                                                (name) => (
+                                                (
+                                                    name
+                                                ) => (
 
                                                     <button
-                                                        key={name}
                                                         type="button"
-                                                        className="suggestion-item"
+                                                        key={
+                                                            name
+                                                        }
+                                                        className="request-suggestion"
                                                         onClick={() => {
 
                                                             setForm(
-                                                                (current) => ({
+                                                                (
+                                                                    current
+                                                                ) => ({
                                                                     ...current,
                                                                     fullName:
                                                                         name
                                                                 })
                                                             );
+
 
                                                             setNameSuggestions(
                                                                 []
@@ -628,7 +712,9 @@ function GuestDonationRequestForm() {
 
                                                         }}
                                                     >
+
                                                         {name}
+
                                                     </button>
 
                                                 )
@@ -648,40 +734,56 @@ function GuestDonationRequestForm() {
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
+
+                                    <FaPhone className="me-2" />
+
                                     Phone Number
+
                                 </label>
 
-                                <div className="suggestion-wrapper">
+
+                                <div className="request-suggestion-wrap">
 
                                     <input
                                         name="phone"
                                         autoComplete="off"
                                         className="form-control request-control"
                                         placeholder="Enter phone number"
-                                        value={form.phone}
-                                        onChange={handleChange}
+                                        value={
+                                            form.phone
+                                        }
+                                        onChange={
+                                            handleChange
+                                        }
                                     />
 
 
                                     {phoneSuggestions.length > 0 && (
 
-                                        <div className="suggestion-menu">
+                                        <div className="request-suggestions">
 
                                             {phoneSuggestions.map(
-                                                (phone) => (
+                                                (
+                                                    phone
+                                                ) => (
 
                                                     <button
-                                                        key={phone}
                                                         type="button"
-                                                        className="suggestion-item"
+                                                        key={
+                                                            phone
+                                                        }
+                                                        className="request-suggestion"
                                                         onClick={() => {
 
                                                             setForm(
-                                                                (current) => ({
+                                                                (
+                                                                    current
+                                                                ) => ({
                                                                     ...current,
                                                                     phone
                                                                 })
                                                             );
+
 
                                                             setPhoneSuggestions(
                                                                 []
@@ -689,7 +791,9 @@ function GuestDonationRequestForm() {
 
                                                         }}
                                                     >
+
                                                         {phone}
+
                                                     </button>
 
                                                 )
@@ -704,27 +808,71 @@ function GuestDonationRequestForm() {
                             </div>
 
 
+                            {/* EMAIL */}
+
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
-                                    Transaction ID
+
+                                    <FaEnvelope className="me-2" />
+
+                                    Email
+
                                 </label>
 
                                 <input
-                                    name="trxId"
+                                    type="email"
+                                    name="email"
                                     className="form-control request-control"
-                                    placeholder="TRX / Reference ID"
-                                    value={form.trxId}
-                                    onChange={handleChange}
+                                    placeholder="name@example.com"
+                                    value={
+                                        form.email
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 />
 
                             </div>
 
 
+                            {/* ACCOUNT TITLE */}
+
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
+
+                                    <FaUniversity className="me-2" />
+
+                                    Account Title
+
+                                </label>
+
+                                <input
+                                    name="accountTitle"
+                                    className="form-control request-control"
+                                    placeholder="Transaction account title"
+                                    value={
+                                        form.accountTitle
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
+                                />
+
+                            </div>
+
+
+                            {/* AMOUNT */}
+
+                            <div className="col-md-6">
+
+                                <label className="form-label fw-semibold">
+
+                                    <FaMoneyBillWave className="me-2" />
+
                                     Amount
+
                                 </label>
 
                                 <input
@@ -733,42 +881,39 @@ function GuestDonationRequestForm() {
                                     name="amount"
                                     className="form-control request-control"
                                     placeholder="Donation amount"
-                                    value={form.amount}
-                                    onChange={handleChange}
+                                    value={
+                                        form.amount
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 />
 
                             </div>
 
 
+                            {/* DATE */}
+
                             <div className="col-md-6">
 
                                 <label className="form-label fw-semibold">
+
+                                    <FaCalendarAlt className="me-2" />
+
                                     Transaction Date
+
                                 </label>
 
                                 <input
                                     type="date"
                                     name="transactionDate"
                                     className="form-control request-control"
-                                    value={form.transactionDate}
-                                    onChange={handleChange}
-                                />
-
-                            </div>
-
-
-                            <div className="col-md-6">
-
-                                <label className="form-label fw-semibold">
-                                    Transaction Time
-                                </label>
-
-                                <input
-                                    type="time"
-                                    name="transactionTime"
-                                    className="form-control request-control"
-                                    value={form.transactionTime}
-                                    onChange={handleChange}
+                                    value={
+                                        form.transactionDate
+                                    }
+                                    onChange={
+                                        handleChange
+                                    }
                                 />
 
                             </div>
@@ -780,37 +925,52 @@ function GuestDonationRequestForm() {
                             type="submit"
                             className="btn btn-success w-100 mt-4"
                             style={{
-                                minHeight: "48px",
-                                borderRadius: "10px",
-                                fontWeight: 600
+                                minHeight:
+                                    "48px",
+                                borderRadius:
+                                    "10px",
+                                fontWeight:
+                                    600
                             }}
-                            disabled={loading}
+                            disabled={
+                                loading
+                            }
                         >
 
                             {loading ? (
+
                                 <>
+
                                     <span className="spinner-border spinner-border-sm me-2" />
+
                                     Submitting...
+
                                 </>
+
                             ) : (
+
                                 <>
+
                                     <FaPaperPlane className="me-2" />
+
                                     Submit Request
+
                                 </>
+
                             )}
 
                         </button>
 
+
+                        <div className="small text-muted mt-3">
+
+                            <FaShieldAlt className="me-2" />
+
+                            The donation is added to financial records only after Finance Manager acceptance.
+
+                        </div>
+
                     </form>
-
-
-                    <div className="request-security-note">
-
-                        <FaShieldAlt />
-
-                        Your request becomes an official donation only after Finance Manager acceptance.
-
-                    </div>
 
                 </div>
 

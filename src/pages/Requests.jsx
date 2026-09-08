@@ -28,6 +28,8 @@ import {
     isFinanceManager
 } from "../utils/auth";
 
+import DonorDetailsUpdateForm
+    from "../components/DonorDetailsUpdateForm";
 
 function Requests() {
 
@@ -470,9 +472,15 @@ function Requests() {
 
                     {!manager && (
 
-                        <GuestDonationRequestForm />
+    <>
 
-                    )}
+        <GuestDonationRequestForm />
+
+        <DonorDetailsUpdateForm />
+
+    </>
+
+)}
 
 
                     {/* =================================
