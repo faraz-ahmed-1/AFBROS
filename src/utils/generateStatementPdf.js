@@ -1,19 +1,17 @@
-import jsPDF
-    from "jspdf";
-
-import autoTable
-    from "jspdf-autotable";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 
 // ======================================================
-// MONEY
+// MONEY FORMAT
 // ======================================================
 
 const money = (value) => {
 
-    return Number(
-        value || 0
-    ).toLocaleString(
+    const number =
+        Number(value || 0);
+
+    return number.toLocaleString(
         "en-PK",
         {
             minimumFractionDigits: 0,
@@ -25,25 +23,20 @@ const money = (value) => {
 
 
 // ======================================================
-// DATE
+// DATE FORMAT
 // ======================================================
 
 const prettyDate = (value) => {
 
     if (!value) {
-
         return "";
-
     }
 
-
     const datePart =
-        String(value)
-            .substring(
-                0,
-                10
-            );
-
+        String(value).substring(
+            0,
+            10
+        );
 
     const [
         year,
@@ -51,10 +44,7 @@ const prettyDate = (value) => {
         day
     ] = datePart.split("-");
 
-
-    return (
-        `${day}/${month}/${year}`
-    );
+    return `${day}/${month}/${year}`;
 
 };
 
@@ -63,27 +53,15 @@ const prettyDate = (value) => {
 // STATEMENT TITLE
 // ======================================================
 
-const getStatementTitle = (
-    type
-) => {
+const getStatementTitle = (type) => {
 
-    if (
-        type === "in"
-    ) {
-
+    if (type === "in") {
         return "Donation Statement";
-
     }
 
-
-    if (
-        type === "out"
-    ) {
-
+    if (type === "out") {
         return "Expenses Statement";
-
     }
-
 
     return "Complete Statement";
 
@@ -94,27 +72,15 @@ const getStatementTitle = (
 // FILE NAME
 // ======================================================
 
-const getFileName = (
-    type
-) => {
+const getFileName = (type) => {
 
-    if (
-        type === "in"
-    ) {
-
+    if (type === "in") {
         return "Donation_Statement";
-
     }
 
-
-    if (
-        type === "out"
-    ) {
-
+    if (type === "out") {
         return "Expenses_Statement";
-
     }
-
 
     return "Complete_Statement";
 
@@ -122,96 +88,126 @@ const getFileName = (
 
 
 // ======================================================
-// DRAW PAGE TOTALS
+// TABLE POSITION CONSTANTS
+// ======================================================
+//
+// Landscape A4 = approximately 297mm wide.
+//
+// Left margin  = 14
+// Right margin = 14
+//
+// Available table width = 269mm
+//
+// Date       28
+// Name       52
+// Details    90
+// Credit     32
+// Debit      32
+// Balance    35
+//
+// Total = 269
 // ======================================================
 
-const drawPageTotals = (
+const TABLE = {
+
+    left: 14,
+
+    dateWidth: 28,
+
+    nameWidth: 52,
+
+    detailsWidth: 90,
+
+    creditWidth: 32,
+
+    debitWidth: 32,
+
+    balanceWidth: 35
+
+};
+
+
+const getColumnPositions = () => {
+
+    const dateX =
+        TABLE.left;
+
+    const nameX =
+        dateX +
+        TABLE.dateWidth;
+
+    const detailsX =
+        nameX +
+        TABLE.nameWidth;
+
+    const creditX =
+        detailsX +
+        TABLE.detailsWidth;
+
+    const debitX =
+        creditX +
+        TABLE.creditWidth;
+
+    const balanceX =
+        debitX +
+        TABLE.debitWidth;
+
+
+    return {
+
+        dateX,
+
+        nameX,
+
+        detailsX,
+
+        creditX,
+
+        debitX,
+
+        balanceX,
+
+        tableEnd:
+            balanceX +
+            TABLE.balanceWidth
+
+    };
+
+};
+
+
+// ======================================================
+// DRAW PAGE TOTAL
+// ======================================================
+
+const drawPageTotal = (
     doc,
-    table,
-    pageTotal
+    pageTotal,
+    isLastPage
 ) => {
 
-    if (
-        !table ||
-        !pageTotal
-    ) {
-
-        return;
-
-    }
-
-
     const pageHeight =
-        doc.internal
-            .pageSize
-            .getHeight();
+        doc.internal.pageSize.getHeight();
+
+    const {
+        detailsX,
+        creditX,
+        debitX,
+        balanceX
+    } = getColumnPositions();
 
 
-    const columns =
-        table.columns;
-
-
-    const detailsColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "details"
-        );
-
-
-    const creditColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "credit"
-        );
-
-
-    const debitColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "debit"
-        );
-
-
-    const balanceColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "balance"
-        );
-
-
-    if (
-        !creditColumn ||
-        !debitColumn ||
-        !balanceColumn
-    ) {
-
-        return;
-
-    }
-
+    /*
+        Last page needs room for:
+        Page Total
+        Grand Total
+        Footer
+    */
 
     const y =
-        pageHeight - 20;
-
-
-    doc.setDrawColor(
-        210,
-        218,
-        213
-    );
-
-
-    doc.line(
-        creditColumn.x,
-        y - 4,
-        balanceColumn.x +
-            balanceColumn.width,
-        y - 4
-    );
+        isLastPage
+            ? pageHeight - 20
+            : pageHeight - 13;
 
 
     doc.setFont(
@@ -219,36 +215,29 @@ const drawPageTotals = (
         "bold"
     );
 
+    doc.setFontSize(8);
 
-    doc.setFontSize(
-        8
+
+    // PAGE TOTAL LABEL
+
+    doc.text(
+        "Page Total",
+        creditX - 3,
+        y,
+        {
+            align: "right"
+        }
     );
 
 
-    if (
-        detailsColumn
-    ) {
-
-        doc.text(
-            "Page Total",
-            detailsColumn.x +
-                detailsColumn.width -
-                2,
-            y,
-            {
-                align: "right"
-            }
-        );
-
-    }
-
+    // CREDIT
 
     doc.text(
         money(
             pageTotal.credit
         ),
-        creditColumn.x +
-            creditColumn.width -
+        creditX +
+            TABLE.creditWidth -
             2,
         y,
         {
@@ -256,13 +245,15 @@ const drawPageTotals = (
         }
     );
 
+
+    // DEBIT
 
     doc.text(
         money(
             pageTotal.debit
         ),
-        debitColumn.x +
-            debitColumn.width -
+        debitX +
+            TABLE.debitWidth -
             2,
         y,
         {
@@ -271,12 +262,14 @@ const drawPageTotals = (
     );
 
 
+    // BALANCE
+
     doc.text(
         money(
             pageTotal.balance
         ),
-        balanceColumn.x +
-            balanceColumn.width -
+        balanceX +
+            TABLE.balanceWidth -
             2,
         y,
         {
@@ -288,93 +281,27 @@ const drawPageTotals = (
 
 
 // ======================================================
-// DRAW GRAND TOTAL ON FINAL PAGE
+// GRAND TOTAL
 // ======================================================
 
 const drawGrandTotal = (
     doc,
-    table,
     totals
 ) => {
 
-    if (!table) {
-
-        return;
-
-    }
-
-
     const pageHeight =
-        doc.internal
-            .pageSize
-            .getHeight();
+        doc.internal.pageSize.getHeight();
 
 
-    const columns =
-        table.columns;
-
-
-    const detailsColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "details"
-        );
-
-
-    const creditColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "credit"
-        );
-
-
-    const debitColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "debit"
-        );
-
-
-    const balanceColumn =
-        columns.find(
-            (column) =>
-                column.dataKey ===
-                "balance"
-        );
-
-
-    if (
-        !creditColumn ||
-        !debitColumn ||
-        !balanceColumn
-    ) {
-
-        return;
-
-    }
+    const {
+        creditX,
+        debitX,
+        balanceX
+    } = getColumnPositions();
 
 
     const y =
         pageHeight - 13;
-
-
-    doc.setDrawColor(
-        170,
-        183,
-        176
-    );
-
-
-    doc.line(
-        creditColumn.x,
-        y - 4,
-        balanceColumn.x +
-            balanceColumn.width,
-        y - 4
-    );
 
 
     doc.setFont(
@@ -382,36 +309,25 @@ const drawGrandTotal = (
         "bold"
     );
 
+    doc.setFontSize(8.5);
 
-    doc.setFontSize(
-        8.5
+
+    doc.text(
+        "Grand Total",
+        creditX - 3,
+        y,
+        {
+            align: "right"
+        }
     );
-
-
-    if (
-        detailsColumn
-    ) {
-
-        doc.text(
-            "Grand Total",
-            detailsColumn.x +
-                detailsColumn.width -
-                2,
-            y,
-            {
-                align: "right"
-            }
-        );
-
-    }
 
 
     doc.text(
         money(
             totals.credit
         ),
-        creditColumn.x +
-            creditColumn.width -
+        creditX +
+            TABLE.creditWidth -
             2,
         y,
         {
@@ -424,8 +340,8 @@ const drawGrandTotal = (
         money(
             totals.debit
         ),
-        debitColumn.x +
-            debitColumn.width -
+        debitX +
+            TABLE.debitWidth -
             2,
         y,
         {
@@ -438,8 +354,8 @@ const drawGrandTotal = (
         money(
             totals.balance
         ),
-        balanceColumn.x +
-            balanceColumn.width -
+        balanceX +
+            TABLE.balanceWidth -
             2,
         y,
         {
@@ -454,21 +370,17 @@ const drawGrandTotal = (
 // FOOTER
 // ======================================================
 
-const addFooter = (
+const drawFooter = (
     doc,
-    pageNumber
+    pageNumber,
+    totalPages
 ) => {
 
     const pageWidth =
-        doc.internal
-            .pageSize
-            .getWidth();
-
+        doc.internal.pageSize.getWidth();
 
     const pageHeight =
-        doc.internal
-            .pageSize
-            .getHeight();
+        doc.internal.pageSize.getHeight();
 
 
     doc.setFont(
@@ -476,23 +388,20 @@ const addFooter = (
         "normal"
     );
 
-
-    doc.setFontSize(
-        7.5
-    );
+    doc.setFontSize(7);
 
 
     doc.text(
         "AFBROS Finance System",
         14,
-        pageHeight - 6
+        pageHeight - 5
     );
 
 
     doc.text(
-        `Page ${pageNumber}`,
+        `Page ${pageNumber} of ${totalPages}`,
         pageWidth - 14,
-        pageHeight - 6,
+        pageHeight - 5,
         {
             align: "right"
         }
@@ -502,7 +411,7 @@ const addFooter = (
 
 
 // ======================================================
-// PDF GENERATOR
+// GENERATE PDF
 // ======================================================
 
 const generateStatementPdf = (
@@ -533,7 +442,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // HEADER
+    // PDF HEADER
     // ==================================================
 
     doc.setFont(
@@ -541,11 +450,7 @@ const generateStatementPdf = (
         "bold"
     );
 
-
-    doc.setFontSize(
-        19
-    );
-
+    doc.setFontSize(19);
 
     doc.text(
         "AFBROS Finance System",
@@ -554,15 +459,10 @@ const generateStatementPdf = (
     );
 
 
-    doc.setFontSize(
-        14
-    );
-
+    doc.setFontSize(14);
 
     doc.text(
-        getStatementTitle(
-            type
-        ),
+        getStatementTitle(type),
         14,
         23
     );
@@ -573,10 +473,7 @@ const generateStatementPdf = (
         "normal"
     );
 
-
-    doc.setFontSize(
-        9
-    );
+    doc.setFontSize(9);
 
 
     const rangeText =
@@ -604,7 +501,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // BUILD TRANSACTIONS
+    // BUILD TABLE RECORDS
     // ==================================================
 
     let runningBalance =
@@ -640,8 +537,7 @@ const generateStatementPdf = (
 
 
                 runningBalance +=
-                    credit -
-                    debit;
+                    credit - debit;
 
 
                 return {
@@ -660,17 +556,13 @@ const generateStatementPdf = (
                         "—",
 
                     credit:
-                        credit
-                            ? money(
-                                credit
-                            )
+                        credit > 0
+                            ? money(credit)
                             : "—",
 
                     debit:
-                        debit
-                            ? money(
-                                debit
-                            )
+                        debit > 0
+                            ? money(debit)
                             : "—",
 
                     balance:
@@ -679,13 +571,15 @@ const generateStatementPdf = (
                         ),
 
 
-                    // Hidden numeric values
-                    // used only for page totals.
+                    /*
+                        Used internally for
+                        calculating page totals.
+                    */
 
-                    __credit:
+                    _credit:
                         credit,
 
-                    __debit:
+                    _debit:
                         debit
 
                 };
@@ -695,12 +589,16 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // PAGE TOTAL TRACKING
+    // PAGE TOTAL STORAGE
     // ==================================================
 
     const pageTotals =
         {};
 
+
+    // ==================================================
+    // GENERATE TABLE
+    // ==================================================
 
     autoTable(
         doc,
@@ -712,19 +610,24 @@ const generateStatementPdf = (
 
             margin: {
 
-                top:
-                    15,
+                top: 15,
 
-                left:
-                    14,
+                left: 14,
 
-                right:
-                    14,
+                right: 14,
 
-                bottom:
-                    28
+                /*
+                    Reserve enough room for
+                    page totals / grand total.
+                */
+
+                bottom: 29
 
             },
+
+
+            rowPageBreak:
+                "avoid",
 
 
             columns: [
@@ -785,7 +688,7 @@ const generateStatementPdf = (
 
 
             body:
-                body.length
+                body.length > 0
                     ? body
                     : [
 
@@ -809,10 +712,10 @@ const generateStatementPdf = (
                             balance:
                                 "",
 
-                            __credit:
+                            _credit:
                                 0,
 
-                            __debit:
+                            _debit:
                                 0
 
                         }
@@ -829,10 +732,14 @@ const generateStatementPdf = (
                     2.8,
 
                 lineColor:
-                    [229, 235, 231],
+                    [
+                        229,
+                        235,
+                        231
+                    ],
 
                 lineWidth:
-                    .15
+                    0.15
 
             },
 
@@ -853,28 +760,28 @@ const generateStatementPdf = (
                 date: {
 
                     cellWidth:
-                        28
+                        TABLE.dateWidth
 
                 },
 
                 name: {
 
                     cellWidth:
-                        52
+                        TABLE.nameWidth
 
                 },
 
                 details: {
 
                     cellWidth:
-                        "auto"
+                        TABLE.detailsWidth
 
                 },
 
                 credit: {
 
                     cellWidth:
-                        32,
+                        TABLE.creditWidth,
 
                     halign:
                         "right"
@@ -884,7 +791,7 @@ const generateStatementPdf = (
                 debit: {
 
                     cellWidth:
-                        32,
+                        TABLE.debitWidth,
 
                     halign:
                         "right"
@@ -894,7 +801,7 @@ const generateStatementPdf = (
                 balance: {
 
                     cellWidth:
-                        35,
+                        TABLE.balanceWidth,
 
                     halign:
                         "right"
@@ -904,10 +811,9 @@ const generateStatementPdf = (
             },
 
 
-            // ==========================================
-            // CALCULATE TOTAL OF RECORDS
-            // ACTUALLY PRINTED ON EACH PAGE
-            // ==========================================
+            // ==================================================
+            // CALCULATE EACH PAGE TOTAL
+            // ==================================================
 
             didDrawCell: (
                 data
@@ -924,9 +830,8 @@ const generateStatementPdf = (
 
 
                 /*
-                    Process once per row.
-                    Balance column is used so the
-                    same row is not counted 6 times.
+                    Run exactly once for each row.
+                    We use Balance column as marker.
                 */
 
                 if (
@@ -969,7 +874,7 @@ const generateStatementPdf = (
                 }
 
 
-                const row =
+                const raw =
                     data.row.raw;
 
 
@@ -977,7 +882,7 @@ const generateStatementPdf = (
                     pageNumber
                 ].credit +=
                     Number(
-                        row.__credit ||
+                        raw._credit ||
                         0
                     );
 
@@ -986,7 +891,7 @@ const generateStatementPdf = (
                     pageNumber
                 ].debit +=
                     Number(
-                        row.__debit ||
+                        raw._debit ||
                         0
                     );
 
@@ -1001,52 +906,6 @@ const generateStatementPdf = (
                         pageNumber
                     ].debit;
 
-            },
-
-
-            // ==========================================
-            // EACH PAGE TOTAL
-            // ==========================================
-
-            didDrawPage: (
-                data
-            ) => {
-
-                const pageNumber =
-                    doc.internal
-                        .getCurrentPageInfo()
-                        .pageNumber;
-
-
-                const pageTotal =
-                    pageTotals[
-                        pageNumber
-                    ] || {
-
-                        credit:
-                            0,
-
-                        debit:
-                            0,
-
-                        balance:
-                            0
-
-                    };
-
-
-                drawPageTotals(
-                    doc,
-                    data.table,
-                    pageTotal
-                );
-
-
-                addFooter(
-                    doc,
-                    pageNumber
-                );
-
             }
 
         }
@@ -1054,8 +913,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // GRAND TOTAL
-    // ONLY ON FINAL PDF PAGE
+    // NUMBER OF PAGES
     // ==================================================
 
     const totalPages =
@@ -1063,44 +921,101 @@ const generateStatementPdf = (
             .getNumberOfPages();
 
 
-    doc.setPage(
-        totalPages
-    );
+    // ==================================================
+    // DRAW TOTALS AFTER TABLE IS COMPLETE
+    // ==================================================
+    //
+    // This avoids depending on AutoTable column
+    // coordinates, which caused the jsPDF.line error.
+    // ==================================================
+
+    for (
+        let pageNumber = 1;
+        pageNumber <= totalPages;
+        pageNumber++
+    ) {
+
+        doc.setPage(
+            pageNumber
+        );
 
 
-    drawGrandTotal(
-        doc,
-        doc.lastAutoTable,
-        {
+        const pageTotal =
+            pageTotals[
+                pageNumber
+            ] || {
 
-            credit:
-                Number(
-                    totals.totalIn ||
+                credit:
+                    0,
+
+                debit:
+                    0,
+
+                balance:
                     0
-                ),
 
-            debit:
-                Number(
-                    totals.totalOut ||
-                    0
-                ),
+            };
 
-            balance:
-                Number(
-                    totals.totalIn ||
-                    0
-                ) -
-                Number(
-                    totals.totalOut ||
-                    0
-                )
+
+        const isLastPage =
+            pageNumber ===
+            totalPages;
+
+
+        drawPageTotal(
+            doc,
+            pageTotal,
+            isLastPage
+        );
+
+
+        if (
+            isLastPage
+        ) {
+
+            drawGrandTotal(
+                doc,
+                {
+
+                    credit:
+                        Number(
+                            totals.totalIn ||
+                            0
+                        ),
+
+                    debit:
+                        Number(
+                            totals.totalOut ||
+                            0
+                        ),
+
+                    balance:
+                        Number(
+                            totals.totalIn ||
+                            0
+                        ) -
+                        Number(
+                            totals.totalOut ||
+                            0
+                        )
+
+                }
+            );
 
         }
-    );
+
+
+        drawFooter(
+            doc,
+            pageNumber,
+            totalPages
+        );
+
+    }
 
 
     // ==================================================
-    // FILE NAME
+    // DOWNLOAD FILE
     // ==================================================
 
     const rangeName =
