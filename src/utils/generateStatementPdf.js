@@ -1,21 +1,56 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+
+import autoTable
+    from "jspdf-autotable";
 
 
 // ======================================================
-// MONEY FORMAT
+// COLORS
 // ======================================================
 
-const money = (value) => {
+const CREDIT_COLOR =
+    [
+        25,
+        135,
+        84
+    ];
 
-    const number =
-        Number(value || 0);
 
-    return number.toLocaleString(
+const DEBIT_COLOR =
+    [
+        220,
+        53,
+        69
+    ];
+
+
+const TEXT_COLOR =
+    [
+        38,
+        55,
+        46
+    ];
+
+
+// ======================================================
+// MONEY
+// ======================================================
+
+const money = (
+    value
+) => {
+
+    return Number(
+        value ||
+        0
+    ).toLocaleString(
         "en-PK",
         {
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 2
+            minimumFractionDigits:
+                0,
+
+            maximumFractionDigits:
+                2
         }
     );
 
@@ -23,45 +58,70 @@ const money = (value) => {
 
 
 // ======================================================
-// DATE FORMAT
+// DATE
 // ======================================================
 
-const prettyDate = (value) => {
+const prettyDate = (
+    value
+) => {
 
     if (!value) {
+
         return "";
+
     }
 
+
     const datePart =
-        String(value).substring(
+        String(
+            value
+        ).substring(
             0,
             10
         );
+
 
     const [
         year,
         month,
         day
-    ] = datePart.split("-");
+    ] = datePart.split(
+        "-"
+    );
 
-    return `${day}/${month}/${year}`;
+
+    return (
+        `${day}/${month}/${year}`
+    );
 
 };
 
 
 // ======================================================
-// STATEMENT TITLE
+// TITLE
 // ======================================================
 
-const getStatementTitle = (type) => {
+const getStatementTitle = (
+    type
+) => {
 
-    if (type === "in") {
+    if (
+        type === "in"
+    ) {
+
         return "Donation Statement";
+
     }
 
-    if (type === "out") {
+
+    if (
+        type === "out"
+    ) {
+
         return "Expenses Statement";
+
     }
+
 
     return "Complete Statement";
 
@@ -72,15 +132,27 @@ const getStatementTitle = (type) => {
 // FILE NAME
 // ======================================================
 
-const getFileName = (type) => {
+const getFileName = (
+    type
+) => {
 
-    if (type === "in") {
+    if (
+        type === "in"
+    ) {
+
         return "Donation_Statement";
+
     }
 
-    if (type === "out") {
+
+    if (
+        type === "out"
+    ) {
+
         return "Expenses_Statement";
+
     }
+
 
     return "Complete_Statement";
 
@@ -88,121 +160,187 @@ const getFileName = (type) => {
 
 
 // ======================================================
-// TABLE POSITION CONSTANTS
-// ======================================================
-//
-// Landscape A4 = approximately 297mm wide.
-//
-// Left margin  = 14
-// Right margin = 14
-//
-// Available table width = 269mm
-//
-// Date       28
-// Name       52
-// Details    90
-// Credit     32
-// Debit      32
-// Balance    35
-//
-// Total = 269
+// TABLE LAYOUTS
 // ======================================================
 
-const TABLE = {
+const TABLE_LEFT =
+    14;
 
-    left: 14,
 
-    dateWidth: 28,
+const layouts = {
 
-    nameWidth: 52,
+    all: {
 
-    detailsWidth: 90,
+        widths: {
 
-    creditWidth: 32,
+            date:
+                28,
 
-    debitWidth: 32,
+            name:
+                52,
 
-    balanceWidth: 35
+            details:
+                90,
+
+            credit:
+                32,
+
+            debit:
+                32,
+
+            balance:
+                35
+
+        },
+
+        order: [
+            "date",
+            "name",
+            "details",
+            "credit",
+            "debit",
+            "balance"
+        ]
+
+    },
+
+
+    in: {
+
+        widths: {
+
+            date:
+                34,
+
+            name:
+                80,
+
+            details:
+                95,
+
+            credit:
+                60
+
+        },
+
+        order: [
+            "date",
+            "name",
+            "details",
+            "credit"
+        ]
+
+    },
+
+
+    out: {
+
+        widths: {
+
+            date:
+                34,
+
+            name:
+                80,
+
+            details:
+                95,
+
+            debit:
+                60
+
+        },
+
+        order: [
+            "date",
+            "name",
+            "details",
+            "debit"
+        ]
+
+    }
 
 };
 
 
-const getColumnPositions = () => {
+// ======================================================
+// GET COLUMN POSITIONS
+// ======================================================
 
-    const dateX =
-        TABLE.left;
+const getPositions = (
+    type
+) => {
 
-    const nameX =
-        dateX +
-        TABLE.dateWidth;
-
-    const detailsX =
-        nameX +
-        TABLE.nameWidth;
-
-    const creditX =
-        detailsX +
-        TABLE.detailsWidth;
-
-    const debitX =
-        creditX +
-        TABLE.creditWidth;
-
-    const balanceX =
-        debitX +
-        TABLE.debitWidth;
+    const layout =
+        layouts[
+            type
+        ];
 
 
-    return {
+    let currentX =
+        TABLE_LEFT;
 
-        dateX,
 
-        nameX,
+    const positions =
+        {};
 
-        detailsX,
 
-        creditX,
+    layout.order.forEach(
+        (key) => {
 
-        debitX,
+            positions[
+                key
+            ] = {
 
-        balanceX,
+                x:
+                    currentX,
 
-        tableEnd:
-            balanceX +
-            TABLE.balanceWidth
+                width:
+                    layout
+                        .widths[
+                            key
+                        ]
 
-    };
+            };
+
+
+            currentX +=
+                layout
+                    .widths[
+                        key
+                    ];
+
+        }
+    );
+
+
+    return positions;
 
 };
 
 
 // ======================================================
-// DRAW PAGE TOTAL
+// PAGE TOTAL
 // ======================================================
 
 const drawPageTotal = (
     doc,
-    pageTotal,
+    type,
+    totals,
     isLastPage
 ) => {
 
+    const positions =
+        getPositions(
+            type
+        );
+
+
     const pageHeight =
-        doc.internal.pageSize.getHeight();
+        doc.internal
+            .pageSize
+            .getHeight();
 
-    const {
-        detailsX,
-        creditX,
-        debitX,
-        balanceX
-    } = getColumnPositions();
-
-
-    /*
-        Last page needs room for:
-        Page Total
-        Grand Total
-        Footer
-    */
 
     const y =
         isLastPage
@@ -215,66 +353,191 @@ const drawPageTotal = (
         "bold"
     );
 
-    doc.setFontSize(8);
 
-
-    // PAGE TOTAL LABEL
-
-    doc.text(
-        "Page Total",
-        creditX - 3,
-        y,
-        {
-            align: "right"
-        }
+    doc.setFontSize(
+        8
     );
 
 
-    // CREDIT
-
-    doc.text(
-        money(
-            pageTotal.credit
-        ),
-        creditX +
-            TABLE.creditWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
+    doc.setTextColor(
+        ...TEXT_COLOR
     );
 
 
-    // DEBIT
+    // ==================================================
+    // COMPLETE
+    // ==================================================
 
-    doc.text(
-        money(
-            pageTotal.debit
-        ),
-        debitX +
-            TABLE.debitWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
-    );
+    if (
+        type === "all"
+    ) {
+
+        doc.text(
+            "Page Total",
+            positions.credit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
 
 
-    // BALANCE
+        // CREDIT
 
-    doc.text(
-        money(
-            pageTotal.balance
-        ),
-        balanceX +
-            TABLE.balanceWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
+        doc.setTextColor(
+            ...CREDIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.credit
+            ),
+            positions.credit.x +
+                positions.credit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        // DEBIT
+
+        doc.setTextColor(
+            ...DEBIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.debit
+            ),
+            positions.debit.x +
+                positions.debit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        // BALANCE
+
+        doc.setTextColor(
+            ...TEXT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.balance
+            ),
+            positions.balance.x +
+                positions.balance.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    // ==================================================
+    // DONATION
+    // ==================================================
+
+    if (
+        type === "in"
+    ) {
+
+        doc.text(
+            "Page Total",
+            positions.credit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...CREDIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.credit
+            ),
+            positions.credit.x +
+                positions.credit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    // ==================================================
+    // EXPENSE
+    // ==================================================
+
+    if (
+        type === "out"
+    ) {
+
+        doc.text(
+            "Page Total",
+            positions.debit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...DEBIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.debit
+            ),
+            positions.debit.x +
+                positions.debit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    doc.setTextColor(
+        ...TEXT_COLOR
     );
 
 };
@@ -286,18 +549,20 @@ const drawPageTotal = (
 
 const drawGrandTotal = (
     doc,
+    type,
     totals
 ) => {
 
+    const positions =
+        getPositions(
+            type
+        );
+
+
     const pageHeight =
-        doc.internal.pageSize.getHeight();
-
-
-    const {
-        creditX,
-        debitX,
-        balanceX
-    } = getColumnPositions();
+        doc.internal
+            .pageSize
+            .getHeight();
 
 
     const y =
@@ -309,58 +574,185 @@ const drawGrandTotal = (
         "bold"
     );
 
-    doc.setFontSize(8.5);
 
-
-    doc.text(
-        "Grand Total",
-        creditX - 3,
-        y,
-        {
-            align: "right"
-        }
+    doc.setFontSize(
+        8.5
     );
 
 
-    doc.text(
-        money(
-            totals.credit
-        ),
-        creditX +
-            TABLE.creditWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
+    doc.setTextColor(
+        ...TEXT_COLOR
     );
 
 
-    doc.text(
-        money(
-            totals.debit
-        ),
-        debitX +
-            TABLE.debitWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
-    );
+    // ==================================================
+    // COMPLETE
+    // ==================================================
+
+    if (
+        type === "all"
+    ) {
+
+        doc.text(
+            "Grand Total",
+            positions.credit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
 
 
-    doc.text(
-        money(
-            totals.balance
-        ),
-        balanceX +
-            TABLE.balanceWidth -
-            2,
-        y,
-        {
-            align: "right"
-        }
+        doc.setTextColor(
+            ...CREDIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.credit
+            ),
+            positions.credit.x +
+                positions.credit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...DEBIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.debit
+            ),
+            positions.debit.x +
+                positions.debit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...TEXT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.balance
+            ),
+            positions.balance.x +
+                positions.balance.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    // ==================================================
+    // DONATION
+    // ==================================================
+
+    if (
+        type === "in"
+    ) {
+
+        doc.text(
+            "Grand Total",
+            positions.credit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...CREDIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.credit
+            ),
+            positions.credit.x +
+                positions.credit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    // ==================================================
+    // EXPENSE
+    // ==================================================
+
+    if (
+        type === "out"
+    ) {
+
+        doc.text(
+            "Grand Total",
+            positions.debit.x -
+                3,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+
+        doc.setTextColor(
+            ...DEBIT_COLOR
+        );
+
+
+        doc.text(
+            money(
+                totals.debit
+            ),
+            positions.debit.x +
+                positions.debit.width -
+                2,
+            y,
+            {
+                align:
+                    "right"
+            }
+        );
+
+    }
+
+
+    doc.setTextColor(
+        ...TEXT_COLOR
     );
 
 };
@@ -377,10 +769,15 @@ const drawFooter = (
 ) => {
 
     const pageWidth =
-        doc.internal.pageSize.getWidth();
+        doc.internal
+            .pageSize
+            .getWidth();
+
 
     const pageHeight =
-        doc.internal.pageSize.getHeight();
+        doc.internal
+            .pageSize
+            .getHeight();
 
 
     doc.setFont(
@@ -388,7 +785,15 @@ const drawFooter = (
         "normal"
     );
 
-    doc.setFontSize(7);
+
+    doc.setFontSize(
+        7
+    );
+
+
+    doc.setTextColor(
+        ...TEXT_COLOR
+    );
 
 
     doc.text(
@@ -403,7 +808,8 @@ const drawFooter = (
         pageWidth - 14,
         pageHeight - 5,
         {
-            align: "right"
+            align:
+                "right"
         }
     );
 
@@ -419,10 +825,13 @@ const generateStatementPdf = (
 ) => {
 
     const {
+
         type,
         range,
         totals,
-        records
+        records,
+        filters
+
     } = report;
 
 
@@ -442,15 +851,24 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // PDF HEADER
+    // HEADER
     // ==================================================
+
+    doc.setTextColor(
+        ...TEXT_COLOR
+    );
+
 
     doc.setFont(
         "helvetica",
         "bold"
     );
 
-    doc.setFontSize(19);
+
+    doc.setFontSize(
+        19
+    );
+
 
     doc.text(
         "AFBROS Finance System",
@@ -459,10 +877,15 @@ const generateStatementPdf = (
     );
 
 
-    doc.setFontSize(14);
+    doc.setFontSize(
+        14
+    );
+
 
     doc.text(
-        getStatementTitle(type),
+        getStatementTitle(
+            type
+        ),
         14,
         23
     );
@@ -473,7 +896,10 @@ const generateStatementPdf = (
         "normal"
     );
 
-    doc.setFontSize(9);
+
+    doc.setFontSize(
+        9
+    );
 
 
     const rangeText =
@@ -493,15 +919,65 @@ const generateStatementPdf = (
     );
 
 
+    let headerBottom =
+        35;
+
+
+    // ==================================================
+    // DONOR
+    // ==================================================
+
+    if (
+        filters?.donor
+    ) {
+
+        doc.setFont(
+            "helvetica",
+            "bold"
+        );
+
+
+        doc.text(
+            "Donor:",
+            14,
+            35
+        );
+
+
+        doc.setFont(
+            "helvetica",
+            "normal"
+        );
+
+
+        doc.text(
+            filters.donor,
+            27,
+            35
+        );
+
+
+        headerBottom =
+            40;
+
+    }
+
+
+    doc.setFont(
+        "helvetica",
+        "normal"
+    );
+
+
     doc.text(
         `Generated: ${new Date().toLocaleString()}`,
         14,
-        35
+        headerBottom
     );
 
 
     // ==================================================
-    // BUILD TABLE RECORDS
+    // BUILD BODY
     // ==================================================
 
     let runningBalance =
@@ -510,7 +986,9 @@ const generateStatementPdf = (
 
     const body =
         records.map(
-            (record) => {
+            (
+                record
+            ) => {
 
                 const amount =
                     Number(
@@ -519,26 +997,120 @@ const generateStatementPdf = (
                     );
 
 
-                const isCredit =
-                    record.transaction_type ===
-                    "IN";
+                // ==================================================
+                // COMPLETE
+                // ==================================================
+
+                if (
+                    type === "all"
+                ) {
+
+                    const credit =
+                        record.transaction_type ===
+                            "IN"
+                            ? amount
+                            : 0;
 
 
-                const credit =
-                    isCredit
-                        ? amount
-                        : 0;
+                    const debit =
+                        record.transaction_type ===
+                            "OUT"
+                            ? amount
+                            : 0;
 
 
-                const debit =
-                    isCredit
-                        ? 0
-                        : amount;
+                    runningBalance +=
+                        credit -
+                        debit;
 
 
-                runningBalance +=
-                    credit - debit;
+                    return {
 
+                        date:
+                            prettyDate(
+                                record.record_date
+                            ),
+
+                        name:
+                            record.full_name ||
+                            "—",
+
+                        details:
+                            record.details ||
+                            "—",
+
+                        credit:
+                            credit
+                                ? money(
+                                    credit
+                                )
+                                : "",
+
+                        debit:
+                            debit
+                                ? money(
+                                    debit
+                                )
+                                : "",
+
+                        balance:
+                            money(
+                                runningBalance
+                            ),
+
+                        _credit:
+                            credit,
+
+                        _debit:
+                            debit
+
+                    };
+
+                }
+
+
+                // ==================================================
+                // DONATION
+                // ==================================================
+
+                if (
+                    type === "in"
+                ) {
+
+                    return {
+
+                        date:
+                            prettyDate(
+                                record.record_date
+                            ),
+
+                        name:
+                            record.full_name ||
+                            "—",
+
+                        details:
+                            record.details ||
+                            "—",
+
+                        credit:
+                            money(
+                                amount
+                            ),
+
+                        _credit:
+                            amount,
+
+                        _debit:
+                            0
+
+                    };
+
+                }
+
+
+                // ==================================================
+                // EXPENSE
+                // ==================================================
 
                 return {
 
@@ -555,37 +1127,314 @@ const generateStatementPdf = (
                         record.details ||
                         "—",
 
-                    credit:
-                        credit > 0
-                            ? money(credit)
-                            : "—",
-
                     debit:
-                        debit > 0
-                            ? money(debit)
-                            : "—",
-
-                    balance:
                         money(
-                            runningBalance
+                            amount
                         ),
 
-
-                    /*
-                        Used internally for
-                        calculating page totals.
-                    */
-
                     _credit:
-                        credit,
+                        0,
 
                     _debit:
-                        debit
+                        amount
 
                 };
 
             }
         );
+
+
+    // ==================================================
+    // COLUMNS
+    // ==================================================
+
+    let columns;
+
+
+    // COMPLETE
+
+    if (
+        type === "all"
+    ) {
+
+        columns = [
+
+            {
+                header:
+                    "Date",
+
+                dataKey:
+                    "date"
+            },
+
+            {
+                header:
+                    "Name",
+
+                dataKey:
+                    "name"
+            },
+
+            {
+                header:
+                    "Details",
+
+                dataKey:
+                    "details"
+            },
+
+            {
+                header:
+                    "Credit",
+
+                dataKey:
+                    "credit"
+            },
+
+            {
+                header:
+                    "Debit",
+
+                dataKey:
+                    "debit"
+            },
+
+            {
+                header:
+                    "Balance",
+
+                dataKey:
+                    "balance"
+            }
+
+        ];
+
+    }
+
+
+    // DONATION
+
+    if (
+        type === "in"
+    ) {
+
+        columns = [
+
+            {
+                header:
+                    "Date",
+
+                dataKey:
+                    "date"
+            },
+
+            {
+                header:
+                    "Donor Name",
+
+                dataKey:
+                    "name"
+            },
+
+            {
+                header:
+                    "Phone",
+
+                dataKey:
+                    "details"
+            },
+
+            {
+                header:
+                    "Credit",
+
+                dataKey:
+                    "credit"
+            }
+
+        ];
+
+    }
+
+
+    // EXPENSE
+
+    if (
+        type === "out"
+    ) {
+
+        columns = [
+
+            {
+                header:
+                    "Date",
+
+                dataKey:
+                    "date"
+            },
+
+            {
+                header:
+                    "Name",
+
+                dataKey:
+                    "name"
+            },
+
+            {
+                header:
+                    "Description",
+
+                dataKey:
+                    "details"
+            },
+
+            {
+                header:
+                    "Debit",
+
+                dataKey:
+                    "debit"
+            }
+
+        ];
+
+    }
+
+
+    // ==================================================
+    // COLUMN STYLES
+    // ==================================================
+
+    let columnStyles;
+
+
+    if (
+        type === "all"
+    ) {
+
+        columnStyles = {
+
+            date: {
+                cellWidth:
+                    28
+            },
+
+            name: {
+                cellWidth:
+                    52
+            },
+
+            details: {
+                cellWidth:
+                    90
+            },
+
+            credit: {
+
+                cellWidth:
+                    32,
+
+                halign:
+                    "right"
+
+            },
+
+            debit: {
+
+                cellWidth:
+                    32,
+
+                halign:
+                    "right"
+
+            },
+
+            balance: {
+
+                cellWidth:
+                    35,
+
+                halign:
+                    "right"
+
+            }
+
+        };
+
+    }
+
+
+    if (
+        type === "in"
+    ) {
+
+        columnStyles = {
+
+            date: {
+                cellWidth:
+                    34
+            },
+
+            name: {
+                cellWidth:
+                    80
+            },
+
+            details: {
+                cellWidth:
+                    95
+            },
+
+            credit: {
+
+                cellWidth:
+                    60,
+
+                halign:
+                    "right"
+
+            }
+
+        };
+
+    }
+
+
+    if (
+        type === "out"
+    ) {
+
+        columnStyles = {
+
+            date: {
+                cellWidth:
+                    34
+            },
+
+            name: {
+                cellWidth:
+                    80
+            },
+
+            details: {
+                cellWidth:
+                    95
+            },
+
+            debit: {
+
+                cellWidth:
+                    60,
+
+                halign:
+                    "right"
+
+            }
+
+        };
+
+    }
 
 
     // ==================================================
@@ -597,7 +1446,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // GENERATE TABLE
+    // TABLE
     // ==================================================
 
     autoTable(
@@ -605,23 +1454,23 @@ const generateStatementPdf = (
         {
 
             startY:
-                42,
+                headerBottom +
+                7,
 
 
             margin: {
 
-                top: 15,
+                top:
+                    15,
 
-                left: 14,
+                left:
+                    14,
 
-                right: 14,
+                right:
+                    14,
 
-                /*
-                    Reserve enough room for
-                    page totals / grand total.
-                */
-
-                bottom: 29
+                bottom:
+                    29
 
             },
 
@@ -630,97 +1479,13 @@ const generateStatementPdf = (
                 "avoid",
 
 
-            columns: [
-
-                {
-                    header:
-                        "Date",
-
-                    dataKey:
-                        "date"
-                },
-
-                {
-                    header:
-                        "Name",
-
-                    dataKey:
-                        "name"
-                },
-
-                {
-                    header:
-                        type === "in"
-                            ? "Phone"
-                            : type === "out"
-                                ? "Description"
-                                : "Details",
-
-                    dataKey:
-                        "details"
-                },
-
-                {
-                    header:
-                        "Credit",
-
-                    dataKey:
-                        "credit"
-                },
-
-                {
-                    header:
-                        "Debit",
-
-                    dataKey:
-                        "debit"
-                },
-
-                {
-                    header:
-                        "Balance",
-
-                    dataKey:
-                        "balance"
-                }
-
-            ],
+            columns,
 
 
             body:
-                body.length > 0
+                body.length
                     ? body
-                    : [
-
-                        {
-
-                            date:
-                                "No records found",
-
-                            name:
-                                "",
-
-                            details:
-                                "",
-
-                            credit:
-                                "",
-
-                            debit:
-                                "",
-
-                            balance:
-                                "",
-
-                            _credit:
-                                0,
-
-                            _debit:
-                                0
-
-                        }
-
-                    ],
+                    : [],
 
 
             styles: {
@@ -731,15 +1496,17 @@ const generateStatementPdf = (
                 cellPadding:
                     2.8,
 
-                lineColor:
-                    [
-                        229,
-                        235,
-                        231
-                    ],
+                lineColor: [
+                    229,
+                    235,
+                    231
+                ],
 
                 lineWidth:
-                    0.15
+                    0.15,
+
+                textColor:
+                    TEXT_COLOR
 
             },
 
@@ -749,62 +1516,55 @@ const generateStatementPdf = (
                 fontStyle:
                     "bold",
 
-                halign:
-                    "left"
+                textColor:
+                    TEXT_COLOR
 
             },
 
 
-            columnStyles: {
+            columnStyles,
 
-                date: {
 
-                    cellWidth:
-                        TABLE.dateWidth
+            // ==================================================
+            // CREDIT GREEN
+            // DEBIT RED
+            // ==================================================
 
-                },
+            didParseCell: (
+                data
+            ) => {
 
-                name: {
+                const key =
+                    data.column
+                        .dataKey;
 
-                    cellWidth:
-                        TABLE.nameWidth
 
-                },
+                if (
+                    key ===
+                    "credit"
+                ) {
 
-                details: {
+                    data.cell.styles.textColor =
+                        CREDIT_COLOR;
 
-                    cellWidth:
-                        TABLE.detailsWidth
 
-                },
+                    data.cell.styles.fontStyle =
+                        "bold";
 
-                credit: {
+                }
 
-                    cellWidth:
-                        TABLE.creditWidth,
 
-                    halign:
-                        "right"
+                if (
+                    key ===
+                    "debit"
+                ) {
 
-                },
+                    data.cell.styles.textColor =
+                        DEBIT_COLOR;
 
-                debit: {
 
-                    cellWidth:
-                        TABLE.debitWidth,
-
-                    halign:
-                        "right"
-
-                },
-
-                balance: {
-
-                    cellWidth:
-                        TABLE.balanceWidth,
-
-                    halign:
-                        "right"
+                    data.cell.styles.fontStyle =
+                        "bold";
 
                 }
 
@@ -812,7 +1572,7 @@ const generateStatementPdf = (
 
 
             // ==================================================
-            // CALCULATE EACH PAGE TOTAL
+            // PAGE TOTAL CALCULATION
             // ==================================================
 
             didDrawCell: (
@@ -829,14 +1589,46 @@ const generateStatementPdf = (
                 }
 
 
-                /*
-                    Run exactly once for each row.
-                    We use Balance column as marker.
-                */
+                let markerColumn;
+
 
                 if (
-                    data.column.dataKey !==
-                    "balance"
+                    type ===
+                    "all"
+                ) {
+
+                    markerColumn =
+                        "balance";
+
+                }
+
+
+                if (
+                    type ===
+                    "in"
+                ) {
+
+                    markerColumn =
+                        "credit";
+
+                }
+
+
+                if (
+                    type ===
+                    "out"
+                ) {
+
+                    markerColumn =
+                        "debit";
+
+                }
+
+
+                if (
+                    data.column
+                        .dataKey !==
+                    markerColumn
                 ) {
 
                     return;
@@ -913,7 +1705,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // NUMBER OF PAGES
+    // TOTAL PAGES
     // ==================================================
 
     const totalPages =
@@ -922,11 +1714,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // DRAW TOTALS AFTER TABLE IS COMPLETE
-    // ==================================================
-    //
-    // This avoids depending on AutoTable column
-    // coordinates, which caused the jsPDF.line error.
+    // PAGE TOTALS + GRAND TOTAL
     // ==================================================
 
     for (
@@ -957,24 +1745,26 @@ const generateStatementPdf = (
             };
 
 
-        const isLastPage =
+        const lastPage =
             pageNumber ===
             totalPages;
 
 
         drawPageTotal(
             doc,
+            type,
             pageTotal,
-            isLastPage
+            lastPage
         );
 
 
         if (
-            isLastPage
+            lastPage
         ) {
 
             drawGrandTotal(
                 doc,
+                type,
                 {
 
                     credit:
@@ -991,11 +1781,7 @@ const generateStatementPdf = (
 
                     balance:
                         Number(
-                            totals.totalIn ||
-                            0
-                        ) -
-                        Number(
-                            totals.totalOut ||
+                            totals.balance ||
                             0
                         )
 
@@ -1015,7 +1801,7 @@ const generateStatementPdf = (
 
 
     // ==================================================
-    // DOWNLOAD FILE
+    // DOWNLOAD
     // ==================================================
 
     const rangeName =

@@ -99,6 +99,19 @@ function PdfReportButton() {
 
 
     // ==================================================
+    // NORMALIZE ROUTE
+    // ==================================================
+
+    const normalizedPath =
+        location.pathname === "/"
+            ? "/"
+            : location.pathname.replace(
+                /\/+$/,
+                ""
+            );
+
+
+    // ==================================================
     // REPORT TYPE
     // ==================================================
 
@@ -106,8 +119,10 @@ function PdfReportButton() {
         null;
 
 
+    // Dashboard = Complete Statement
+
     if (
-        location.pathname === "/"
+        normalizedPath === "/"
     ) {
 
         reportType =
@@ -116,9 +131,11 @@ function PdfReportButton() {
     }
 
 
+    // Donors = Donation Statement
+
     if (
-        location.pathname ===
-        "/depositors"
+        normalizedPath === "/depositors" ||
+        normalizedPath === "/donors"
     ) {
 
         reportType =
@@ -127,9 +144,10 @@ function PdfReportButton() {
     }
 
 
+    // Expenses = Expenses Statement
+
     if (
-        location.pathname ===
-        "/expenses"
+        normalizedPath === "/expenses"
     ) {
 
         reportType =
@@ -139,22 +157,15 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // MANAGER ONLY
+    // DONOR FILTER AVAILABILITY
     // ==================================================
-
-    if (
-        !manager ||
-        !reportType
-    ) {
-
-        return null;
-
-    }
-
-
-    // ==================================================
-    // DONOR FIELD ONLY ON:
-    // COMPLETE + DONATION STATEMENT
+    //
+    // Donor field appears only on:
+    //
+    // Dashboard
+    // Donation / Donors page
+    //
+    // Never on Expenses.
     // ==================================================
 
     const showDonorFilter =
@@ -169,12 +180,16 @@ function PdfReportButton() {
     useEffect(() => {
 
         if (
+            !manager ||
             !showDonorFilter
         ) {
 
             setDonorSuggestions([]);
 
+            setDonorSearching(false);
+
             return;
+
         }
 
 
@@ -186,21 +201,29 @@ function PdfReportButton() {
 
             setDonorSuggestions([]);
 
+            setDonorSearching(false);
+
             setDonorSelected(false);
 
             return;
+
         }
 
 
         /*
-            If user already selected
-            exact donor from dropdown,
-            don't immediately reopen dropdown.
+            If donor has already been selected
+            from the suggestions, don't reopen
+            the dropdown immediately.
         */
 
-        if (donorSelected) {
+        if (
+            donorSelected
+        ) {
+
+            setDonorSearching(false);
 
             return;
+
         }
 
 
@@ -232,8 +255,7 @@ function PdfReportButton() {
 
 
                         const query =
-                            search
-                                .toLowerCase();
+                            search.toLowerCase();
 
 
                         const uniqueNames =
@@ -276,11 +298,6 @@ function PdfReportButton() {
 
                             }
 
-
-                            /*
-                                Prevent duplicate donor
-                                names in suggestions.
-                            */
 
                             if (
                                 seen.has(
@@ -355,12 +372,86 @@ function PdfReportButton() {
     }, [
         donorName,
         donorSelected,
+        showDonorFilter,
+        manager
+    ]);
+
+
+    // ==================================================
+    // CLEAR DONOR WHEN ENTERING EXPENSES
+    // ==================================================
+
+    useEffect(() => {
+
+        if (
+            !showDonorFilter
+        ) {
+
+            setDonorName("");
+
+            setDonorSelected(false);
+
+            setDonorSuggestions([]);
+
+            setDonorSearching(false);
+
+        }
+
+    }, [
         showDonorFilter
     ]);
 
 
     // ==================================================
-    // DONOR CHANGE
+    // RESET MODAL FILTERS WHEN PAGE CHANGES
+    // ==================================================
+
+    useEffect(() => {
+
+        setShowModal(
+            false
+        );
+
+
+        setDonorName(
+            ""
+        );
+
+
+        setDonorSelected(
+            false
+        );
+
+
+        setDonorSuggestions(
+            []
+        );
+
+
+        setDonorSearching(
+            false
+        );
+
+
+        setDates({
+
+            fromDay: "",
+            fromMonth: "",
+            fromYear: "",
+
+            toDay: "",
+            toMonth: "",
+            toYear: ""
+
+        });
+
+    }, [
+        normalizedPath
+    ]);
+
+
+    // ==================================================
+    // DONOR INPUT CHANGE
     // ==================================================
 
     const handleDonorChange = (
@@ -373,9 +464,8 @@ function PdfReportButton() {
 
 
         /*
-            Once user changes selected
-            text manually, it must be
-            validated again.
+            User manually modified the field,
+            so it must be validated again.
         */
 
         setDonorSelected(
@@ -407,11 +497,16 @@ function PdfReportButton() {
             []
         );
 
+
+        setDonorSearching(
+            false
+        );
+
     };
 
 
     // ==================================================
-    // DATE INPUT
+    // DATE INPUT CHANGE
     // ==================================================
 
     const handleChange = (
@@ -446,7 +541,7 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // CLEAR
+    // CLEAR FILTERS
     // ==================================================
 
     const clearFilters = () => {
@@ -466,6 +561,11 @@ function PdfReportButton() {
         );
 
 
+        setDonorSearching(
+            false
+        );
+
+
         setDates({
 
             fromDay: "",
@@ -482,7 +582,7 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // CLOSE
+    // CLOSE MODAL
     // ==================================================
 
     const closeModal = () => {
@@ -505,11 +605,16 @@ function PdfReportButton() {
             []
         );
 
+
+        setDonorSearching(
+            false
+        );
+
     };
 
 
     // ==================================================
-    // BUILD DATE
+    // BUILD VALID DATE
     // ==================================================
 
     const buildDate = (
@@ -563,7 +668,6 @@ function PdfReportButton() {
 
 
         return (
-
             `${String(
                 year
             ).padStart(
@@ -580,14 +684,13 @@ function PdfReportButton() {
                 2,
                 "0"
             )}`
-
         );
 
     };
 
 
     // ==================================================
-    // VALIDATE DONOR BEFORE PDF
+    // VALIDATE DONOR
     // ==================================================
 
     const validateDonor =
@@ -597,6 +700,8 @@ function PdfReportButton() {
                 donorName.trim();
 
 
+            // Empty donor is allowed.
+
             if (
                 !showDonorFilter ||
                 !enteredName
@@ -604,9 +709,11 @@ function PdfReportButton() {
 
                 return {
 
-                    valid: true,
+                    valid:
+                        true,
 
-                    name: ""
+                    name:
+                        ""
 
                 };
 
@@ -637,12 +744,27 @@ function PdfReportButton() {
                         res.data ||
                         []
                     ).find(
-                        (donation) => {
+                        (
+                            donation
+                        ) => {
 
-                            return (
+                            const currentName =
                                 donation
                                     .full_name
-                                    ?.trim()
+                                    ?.trim();
+
+
+                            if (
+                                !currentName
+                            ) {
+
+                                return false;
+
+                            }
+
+
+                            return (
+                                currentName
                                     .toLowerCase() ===
                                 enteredName
                                     .toLowerCase()
@@ -652,13 +774,17 @@ function PdfReportButton() {
                     );
 
 
-                if (!match) {
+                if (
+                    !match
+                ) {
 
                     return {
 
-                        valid: false,
+                        valid:
+                            false,
 
-                        name: ""
+                        name:
+                            ""
 
                     };
 
@@ -667,10 +793,13 @@ function PdfReportButton() {
 
                 return {
 
-                    valid: true,
+                    valid:
+                        true,
 
                     name:
-                        match.full_name.trim()
+                        match
+                            .full_name
+                            .trim()
 
                 };
 
@@ -685,9 +814,11 @@ function PdfReportButton() {
 
                 return {
 
-                    valid: false,
+                    valid:
+                        false,
 
-                    name: ""
+                    name:
+                        ""
 
                 };
 
@@ -697,11 +828,15 @@ function PdfReportButton() {
 
 
     // ==================================================
-    // DOWNLOAD
+    // DOWNLOAD PDF
     // ==================================================
 
     const downloadPdf =
         async () => {
+
+            // ==================================================
+            // DATE FIELD CHECK
+            // ==================================================
 
             const values = [
 
@@ -731,7 +866,7 @@ function PdfReportButton() {
 
 
             // ==================================================
-            // PARTIAL DATE
+            // PARTIAL DATE ERROR
             // ==================================================
 
             if (
@@ -749,7 +884,7 @@ function PdfReportButton() {
 
 
             // ==================================================
-            // CUSTOM RANGE
+            // CUSTOM DATE RANGE
             // ==================================================
 
             if (
@@ -835,11 +970,6 @@ function PdfReportButton() {
                     validation.name;
 
 
-                /*
-                    Normalize displayed name
-                    to database spelling.
-                */
-
                 setDonorName(
                     validation.name
                 );
@@ -853,13 +983,37 @@ function PdfReportButton() {
 
 
             // ==================================================
-            // PARAMETERS
+            // EFFECTIVE REPORT TYPE
+            // ==================================================
+            //
+            // Dashboard without donor:
+            //     Complete Statement
+            //
+            // Dashboard with donor:
+            //     Donation Statement
+            //
+            // Donors:
+            //     Donation Statement
+            //
+            // Expenses:
+            //     Expenses Statement
+            // ==================================================
+
+            const effectiveReportType =
+                reportType === "all" &&
+                validDonorName
+                    ? "in"
+                    : reportType;
+
+
+            // ==================================================
+            // BUILD PARAMS
             // ==================================================
 
             const params = {
 
                 type:
-                    reportType
+                    effectiveReportType
 
             };
 
@@ -889,7 +1043,7 @@ function PdfReportButton() {
 
 
             // ==================================================
-            // GENERATE
+            // REQUEST + GENERATE
             // ==================================================
 
             try {
@@ -951,6 +1105,28 @@ function PdfReportButton() {
         };
 
 
+    // ==================================================
+    // FINANCE MANAGER ONLY
+    // ==================================================
+    //
+    // Kept AFTER hooks to avoid conditional
+    // React hook execution.
+    // ==================================================
+
+    if (
+        !manager ||
+        !reportType
+    ) {
+
+        return null;
+
+    }
+
+
+    // ==================================================
+    // UI
+    // ==================================================
+
     return (
         <>
 
@@ -968,34 +1144,26 @@ function PdfReportButton() {
 
 
                     .pdf-download-btn {
-
                         display: flex;
                         align-items: center;
                         gap: 8px;
 
                         min-height: 41px;
 
-                        padding:
-                            9px 15px;
+                        padding: 9px 15px;
 
                         border:
-                            1px solid
-                            #dbe5df;
+                            1px solid #dbe5df;
 
-                        border-radius:
-                            10px;
+                        border-radius: 10px;
 
-                        background:
-                            white;
+                        background: white;
 
-                        color:
-                            #198754;
+                        color: #198754;
 
-                        font-size:
-                            13px;
+                        font-size: 13px;
 
-                        font-weight:
-                            600;
+                        font-weight: 600;
 
                         box-shadow:
                             0 3px 12px
@@ -1008,18 +1176,12 @@ function PdfReportButton() {
 
                         transition:
                             .2s ease;
-
                     }
 
 
                     .pdf-download-btn:hover {
-
-                        border-color:
-                            #198754;
-
-                        background:
-                            #f4fbf7;
-
+                        border-color: #198754;
+                        background: #f4fbf7;
                     }
 
 
@@ -1028,27 +1190,16 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-modal-overlay {
+                        position: fixed;
+                        inset: 0;
 
-                        position:
-                            fixed;
+                        z-index: 99990;
 
-                        inset:
-                            0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
-                        z-index:
-                            99990;
-
-                        display:
-                            flex;
-
-                        align-items:
-                            center;
-
-                        justify-content:
-                            center;
-
-                        padding:
-                            20px;
+                        padding: 20px;
 
                         background:
                             rgba(
@@ -1060,7 +1211,6 @@ function PdfReportButton() {
 
                         backdrop-filter:
                             blur(4px);
-
                     }
 
 
@@ -1069,27 +1219,19 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-modal {
-
-                        width:
-                            100%;
-
-                        max-width:
-                            620px;
+                        width: 100%;
+                        max-width: 620px;
 
                         max-height:
                             calc(
-                                100vh -
-                                40px
+                                100vh - 40px
                             );
 
-                        overflow-y:
-                            auto;
+                        overflow-y: auto;
 
-                        background:
-                            white;
+                        background: white;
 
-                        border-radius:
-                            20px;
+                        border-radius: 20px;
 
                         box-shadow:
                             0 30px 90px
@@ -1099,7 +1241,6 @@ function PdfReportButton() {
                                 0,
                                 .20
                             );
-
                     }
 
 
@@ -1108,138 +1249,91 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-modal-header {
+                        position: sticky;
+                        top: 0;
 
-                        position:
-                            sticky;
+                        z-index: 20;
 
-                        top:
-                            0;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
 
-                        z-index:
-                            20;
+                        padding: 20px 24px;
 
-                        display:
-                            flex;
-
-                        align-items:
-                            center;
-
-                        justify-content:
-                            space-between;
-
-                        padding:
-                            20px 24px;
-
-                        background:
-                            white;
+                        background: white;
 
                         border-bottom:
-                            1px solid
-                            #edf1ee;
-
+                            1px solid #edf1ee;
                     }
 
 
                     .pdf-header-left {
-
-                        display:
-                            flex;
-
-                        align-items:
-                            center;
-
-                        gap:
-                            12px;
-
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
                     }
 
 
                     .pdf-header-icon {
+                        width: 43px;
+                        height: 43px;
 
-                        width:
-                            43px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
-                        height:
-                            43px;
+                        flex-shrink: 0;
 
-                        display:
-                            flex;
+                        border-radius: 11px;
 
-                        align-items:
-                            center;
+                        background: #fff0f1;
 
-                        justify-content:
-                            center;
+                        color: #dc3545;
 
-                        flex-shrink:
-                            0;
-
-                        border-radius:
-                            11px;
-
-                        background:
-                            #fff0f1;
-
-                        color:
-                            #dc3545;
-
-                        font-size:
-                            18px;
-
+                        font-size: 18px;
                     }
 
 
                     .pdf-modal-title {
+                        margin: 0;
 
-                        margin:
-                            0;
+                        color: #26372e;
 
-                        color:
-                            #26372e;
+                        font-size: 18px;
 
-                        font-size:
-                            18px;
-
-                        font-weight:
-                            700;
-
+                        font-weight: 700;
                     }
 
 
                     .pdf-modal-subtitle {
+                        margin: 3px 0 0;
 
-                        margin:
-                            3px 0 0;
+                        color: #87938c;
 
-                        color:
-                            #87938c;
-
-                        font-size:
-                            11px;
-
+                        font-size: 11px;
                     }
 
 
                     .pdf-close-btn {
+                        width: 36px;
+                        height: 36px;
 
-                        width:
-                            36px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
 
-                        height:
-                            36px;
+                        border: none;
 
-                        border:
-                            none;
+                        border-radius: 9px;
 
-                        border-radius:
-                            9px;
+                        background: #f3f6f4;
 
-                        background:
-                            #f3f6f4;
+                        color: #748079;
+                    }
 
-                        color:
-                            #748079;
 
+                    .pdf-close-btn:hover:not(:disabled) {
+                        background: #e9eeeb;
                     }
 
 
@@ -1248,10 +1342,7 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-modal-body {
-
-                        padding:
-                            25px;
-
+                        padding: 25px;
                     }
 
 
@@ -1260,75 +1351,49 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-filter-section {
-
-                        padding:
-                            17px;
+                        padding: 17px;
 
                         border:
-                            1px solid
-                            #e6ece8;
+                            1px solid #e6ece8;
 
-                        border-radius:
-                            13px;
+                        border-radius: 13px;
 
-                        background:
-                            #fafcfa;
-
+                        background: #fafcfa;
                     }
 
 
                     .pdf-filter-title {
+                        display: flex;
+                        align-items: center;
+                        gap: 7px;
 
-                        display:
-                            flex;
+                        margin-bottom: 13px;
 
-                        align-items:
-                            center;
+                        color: #36463d;
 
-                        gap:
-                            7px;
+                        font-size: 13px;
 
-                        margin-bottom:
-                            13px;
-
-                        color:
-                            #36463d;
-
-                        font-size:
-                            13px;
-
-                        font-weight:
-                            700;
-
+                        font-weight: 700;
                     }
 
 
                     .pdf-input {
-
-                        min-height:
-                            45px;
+                        min-height: 45px;
 
                         border:
-                            1px solid
-                            #dfe6e2;
+                            1px solid #dfe6e2;
 
-                        border-radius:
-                            9px;
+                        border-radius: 9px;
 
-                        background:
-                            white;
+                        background: white;
 
                         box-shadow:
-                            none
-                            !important;
-
+                            none !important;
                     }
 
 
                     .pdf-input:focus {
-
-                        border-color:
-                            #198754;
+                        border-color: #198754;
 
                         box-shadow:
                             0 0 0 4px
@@ -1339,7 +1404,6 @@ function PdfReportButton() {
                                 .08
                             )
                             !important;
-
                     }
 
 
@@ -1348,47 +1412,33 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-donor-wrapper {
-
-                        position:
-                            relative;
-
+                        position: relative;
                     }
 
 
                     .pdf-donor-suggestions {
-
-                        position:
-                            absolute;
+                        position: absolute;
 
                         top:
                             calc(
                                 100% + 5px
                             );
 
-                        left:
-                            0;
+                        left: 0;
+                        right: 0;
 
-                        right:
-                            0;
+                        z-index: 100;
 
-                        z-index:
-                            100;
+                        max-height: 230px;
 
-                        max-height:
-                            230px;
+                        overflow-y: auto;
 
-                        overflow-y:
-                            auto;
-
-                        background:
-                            white;
+                        background: white;
 
                         border:
-                            1px solid
-                            #dce6e0;
+                            1px solid #dce6e0;
 
-                        border-radius:
-                            10px;
+                        border-radius: 10px;
 
                         box-shadow:
                             0 12px 30px
@@ -1398,109 +1448,71 @@ function PdfReportButton() {
                                 35,
                                 .14
                             );
-
                     }
 
 
                     .pdf-donor-option {
+                        width: 100%;
 
-                        width:
-                            100%;
+                        display: flex;
+                        align-items: center;
+                        gap: 9px;
 
-                        display:
-                            flex;
+                        padding: 11px 13px;
 
-                        align-items:
-                            center;
-
-                        gap:
-                            9px;
-
-                        padding:
-                            11px 13px;
-
-                        border:
-                            none;
+                        border: none;
 
                         border-bottom:
-                            1px solid
-                            #eff3f0;
+                            1px solid #eff3f0;
 
-                        background:
-                            white;
+                        background: white;
 
-                        color:
-                            #34453c;
+                        color: #34453c;
 
-                        text-align:
-                            left;
+                        text-align: left;
 
-                        font-size:
-                            13px;
-
+                        font-size: 13px;
                     }
 
 
                     .pdf-donor-option:hover {
-
-                        background:
-                            #f2faf5;
-
-                        color:
-                            #198754;
-
+                        background: #f2faf5;
+                        color: #198754;
                     }
 
 
                     .pdf-donor-option:last-child {
-
-                        border-bottom:
-                            none;
-
+                        border-bottom: none;
                     }
 
 
                     .pdf-searching {
+                        padding: 11px 13px;
 
-                        padding:
-                            11px 13px;
+                        color: #87938c;
 
-                        color:
-                            #87938c;
-
-                        font-size:
-                            12px;
-
+                        font-size: 12px;
                     }
 
 
                     /* =================================
-                       HELP
+                       HELP BOX
                     ================================= */
 
                     .pdf-help {
+                        margin-top: 17px;
 
-                        margin-top:
-                            17px;
+                        padding: 12px 14px;
 
-                        padding:
-                            12px 14px;
+                        border-radius: 10px;
 
-                        border-radius:
-                            10px;
+                        background: #f3f8f5;
 
-                        background:
-                            #f3f8f5;
+                        color: #718078;
 
-                        color:
-                            #718078;
+                        font-size: 11px;
 
-                        font-size:
-                            11px;
-
-                        line-height:
-                            1.65;
-
+                        line-height: 1.65;
                     }
 
 
@@ -1509,55 +1521,34 @@ function PdfReportButton() {
                     ================================= */
 
                     .pdf-modal-footer {
+                        position: sticky;
+                        bottom: 0;
 
-                        position:
-                            sticky;
+                        z-index: 20;
 
-                        bottom:
-                            0;
+                        display: flex;
+                        justify-content: flex-end;
+                        gap: 10px;
 
-                        z-index:
-                            20;
-
-                        display:
-                            flex;
-
-                        justify-content:
-                            flex-end;
-
-                        gap:
-                            10px;
-
-                        padding:
-                            17px 24px;
+                        padding: 17px 24px;
 
                         border-top:
-                            1px solid
-                            #edf1ee;
+                            1px solid #edf1ee;
 
-                        background:
-                            #fafbfa;
-
+                        background: #fafbfa;
                     }
 
 
                     .pdf-modal-footer button {
+                        min-height: 43px;
 
-                        min-height:
-                            43px;
+                        padding: 8px 16px;
 
-                        padding:
-                            8px 16px;
+                        border-radius: 9px;
 
-                        border-radius:
-                            9px;
+                        font-size: 13px;
 
-                        font-size:
-                            13px;
-
-                        font-weight:
-                            600;
-
+                        font-weight: 600;
                     }
 
 
@@ -1566,61 +1557,40 @@ function PdfReportButton() {
                     ================================= */
 
                     @media(
-                        max-width:
-                        600px
+                        max-width: 600px
                     ) {
 
                         .pdf-download-btn {
-
-                            width:
-                                100%;
-
-                            justify-content:
-                                center;
-
+                            width: 100%;
+                            justify-content: center;
                         }
 
 
                         .pdf-modal-overlay {
-
-                            padding:
-                                12px;
-
+                            padding: 12px;
                         }
 
 
                         .pdf-modal {
-
                             max-height:
                                 calc(
-                                    100vh -
-                                    24px
+                                    100vh - 24px
                                 );
-
                         }
 
 
                         .pdf-modal-body {
-
-                            padding:
-                                18px;
-
+                            padding: 18px;
                         }
 
 
                         .pdf-modal-header {
-
-                            padding:
-                                17px 18px;
-
+                            padding: 17px 18px;
                         }
 
 
                         .pdf-modal-footer {
-
-                            padding:
-                                14px 18px;
-
+                            padding: 14px 18px;
                         }
 
                     }
@@ -1630,7 +1600,7 @@ function PdfReportButton() {
 
 
             {/* =========================================
-                BUTTON
+                DOWNLOAD BUTTON
             ========================================= */}
 
             <div className="pdf-report-toolbar">
@@ -1675,7 +1645,9 @@ function PdfReportButton() {
                     <div className="pdf-modal">
 
 
-                        {/* HEADER */}
+                        {/* =================================
+                            HEADER
+                        ================================= */}
 
                         <div className="pdf-modal-header">
 
@@ -1695,6 +1667,7 @@ function PdfReportButton() {
                                         Download Statement
 
                                     </h3>
+
 
                                     <p className="pdf-modal-subtitle">
 
@@ -1725,7 +1698,9 @@ function PdfReportButton() {
                         </div>
 
 
-                        {/* BODY */}
+                        {/* =================================
+                            BODY
+                        ================================= */}
 
                         <div className="pdf-modal-body">
 
@@ -1733,9 +1708,7 @@ function PdfReportButton() {
                             {/* =================================
                                 DONOR FILTER
 
-                                ONLY:
-                                COMPLETE STATEMENT
-                                DONATION STATEMENT
+                                Dashboard + Donors only
                             ================================= */}
 
                             {showDonorFilter && (
@@ -1792,7 +1765,7 @@ function PdfReportButton() {
                                         )}
 
 
-                                        {/* SUGGESTIONS */}
+                                        {/* RESULTS */}
 
                                         {!donorSearching &&
                                             donorSuggestions.length > 0 &&
@@ -1855,6 +1828,9 @@ function PdfReportButton() {
 
                                 <div className="row g-2">
 
+
+                                    {/* DAY */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -1862,6 +1838,7 @@ function PdfReportButton() {
                                             Day
 
                                         </label>
+
 
                                         <input
                                             name="fromDay"
@@ -1880,6 +1857,8 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* MONTH */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -1887,6 +1866,7 @@ function PdfReportButton() {
                                             Month
 
                                         </label>
+
 
                                         <input
                                             name="fromMonth"
@@ -1905,6 +1885,8 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* YEAR */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -1912,6 +1894,7 @@ function PdfReportButton() {
                                             Year
 
                                         </label>
+
 
                                         <input
                                             name="fromYear"
@@ -1951,6 +1934,9 @@ function PdfReportButton() {
 
                                 <div className="row g-2">
 
+
+                                    {/* DAY */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -1958,6 +1944,7 @@ function PdfReportButton() {
                                             Day
 
                                         </label>
+
 
                                         <input
                                             name="toDay"
@@ -1976,6 +1963,8 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* MONTH */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -1983,6 +1972,7 @@ function PdfReportButton() {
                                             Month
 
                                         </label>
+
 
                                         <input
                                             name="toMonth"
@@ -2001,6 +1991,8 @@ function PdfReportButton() {
                                     </div>
 
 
+                                    {/* YEAR */}
+
                                     <div className="col-4">
 
                                         <label className="form-label small">
@@ -2008,6 +2000,7 @@ function PdfReportButton() {
                                             Year
 
                                         </label>
+
 
                                         <input
                                             name="toYear"
@@ -2039,6 +2032,7 @@ function PdfReportButton() {
                                 {showDonorFilter && (
 
                                     <>
+
                                         <strong>
                                             Donor Name:
                                         </strong>
@@ -2048,6 +2042,7 @@ function PdfReportButton() {
                                         Optional. If entered, it must match an existing donor. Select a donor from the suggestions.
 
                                         <br />
+
                                     </>
 
                                 )}
@@ -2070,14 +2065,16 @@ function PdfReportButton() {
 
                                 {" "}
 
-                                All six date fields are required.
+                                All six Day, Month and Year fields are required.
 
                             </div>
 
                         </div>
 
 
-                        {/* FOOTER */}
+                        {/* =================================
+                            FOOTER
+                        ================================= */}
 
                         <div className="pdf-modal-footer">
 
